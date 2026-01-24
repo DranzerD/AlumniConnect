@@ -1,0 +1,255 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Variants */
+.primary {
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: white;
+}
+
+.primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+}
+
+.primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.secondary {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.secondary:hover:not(:disabled) {
+  background: #e5e5e5;
+}
+
+.outline {
+  background: transparent;
+  border: 2px solid #2563eb;
+  color: #2563eb;
+}
+
+.outline:hover:not(:disabled) {
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.ghost {
+  background: transparent;
+  color: #555;
+}
+
+.ghost:hover:not(:disabled) {
+  background: #f5f5f5;
+}
+
+.danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+}
+
+.danger:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+}
+
+.success {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.success:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+}
+
+.warning {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+}
+
+.warning:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+}
+
+.link {
+  background: transparent;
+  color: #2563eb;
+  padding: 0;
+}
+
+.link:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+/* Sizes */
+.small {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  border-radius: 8px;
+}
+
+.medium {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+}
+
+.large {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  border-radius: 12px;
+}
+
+/* Full Width */
+.fullWidth {
+  width: 100%;
+}
+
+/* Loading State */
+.loading {
+  position: relative;
+  color: transparent;
+}
+
+.spinner {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner svg {
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+.primary.loading .spinner svg,
+.danger.loading .spinner svg,
+.success.loading .spinner svg,
+.warning.loading .spinner svg {
+  color: white;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Icon */
+.icon {
+  display: flex;
+  align-items: center;
+  font-size: 1.1em;
+}
+
+.text {
+  display: flex;
+  align-items: center;
+}
+
+/* Button Group */
+.buttonGroup {
+  display: flex;
+  gap: 0;
+}
+
+.buttonGroup .button {
+  border-radius: 0;
+}
+
+.buttonGroup .button:first-child {
+  border-radius: 10px 0 0 10px;
+}
+
+.buttonGroup .button:last-child {
+  border-radius: 0 10px 10px 0;
+}
+
+.buttonGroup .outline + .outline {
+  margin-left: -2px;
+}
+
+/* Icon Button */
+.iconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.iconButton.small {
+  width: 32px;
+  height: 32px;
+  font-size: 0.9rem;
+}
+
+.iconButton.medium {
+  width: 40px;
+  height: 40px;
+  font-size: 1.1rem;
+}
+
+.iconButton.large {
+  width: 48px;
+  height: 48px;
+  font-size: 1.3rem;
+}
+
+.iconButton.ghost {
+  background: transparent;
+  color: #666;
+}
+
+.iconButton.ghost:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.iconButton.primary {
+  background: #2563eb;
+  color: white;
+}
+
+.iconButton.primary:hover {
+  background: #1d4ed8;
+}
+
+.iconButton:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.3);
+}

@@ -1,0 +1,44 @@
+.container {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.label {
+  font-weight: 600;
+  color: #333;
+}
+
+.percentage {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.barBackground {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease-out, background-color 0.3s;
+}
+
+.hint {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0;
+}

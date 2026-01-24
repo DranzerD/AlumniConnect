@@ -1,0 +1,252 @@
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 1rem 2rem;
+  transition: all 0.3s ease;
+  background: transparent;
+}
+
+.navbar.scrolled {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  transition: color 0.3s ease;
+}
+
+.navbar.scrolled .logo {
+  color: #1a1a2e;
+}
+
+.logoIcon {
+  font-size: 1.8rem;
+}
+
+.logoText {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.navbar:not(.scrolled) .logoText {
+  background: linear-gradient(135deg, #fff 0%, #e0e0e0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.navContent {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.navLinks {
+  display: flex;
+  list-style: none;
+  gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+}
+
+.navLink {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.5rem 0;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.navbar.scrolled .navLink {
+  color: #555;
+}
+
+.navLink::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transition: width 0.3s ease;
+}
+
+.navLink:hover::after,
+.navLink.active::after {
+  width: 100%;
+}
+
+.navLink:hover {
+  color: #667eea;
+  text-decoration: none;
+}
+
+.authButtons {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.loginBtn {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.navbar.scrolled .loginBtn {
+  color: #667eea;
+}
+
+.loginBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  text-decoration: none;
+}
+
+.navbar.scrolled .loginBtn:hover {
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.registerBtn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.6rem 1.5rem;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.registerBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  text-decoration: none;
+}
+
+.mobileMenuBtn {
+  display: none;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.hamburger {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: white;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.navbar.scrolled .hamburger {
+  background: #333;
+}
+
+.hamburger::before,
+.hamburger::after {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 2px;
+  background: inherit;
+  transition: all 0.3s ease;
+}
+
+.hamburger::before {
+  top: -8px;
+}
+
+.hamburger::after {
+  top: 8px;
+}
+
+.hamburger.open {
+  background: transparent;
+}
+
+.hamburger.open::before {
+  top: 0;
+  transform: rotate(45deg);
+}
+
+.hamburger.open::after {
+  top: 0;
+  transform: rotate(-45deg);
+}
+
+@media (max-width: 768px) {
+  .mobileMenuBtn {
+    display: block;
+  }
+
+  .navContent {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(26, 26, 46, 0.98);
+    flex-direction: column;
+    justify-content: center;
+    padding: 2rem;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+  }
+
+  .navContent.mobileOpen {
+    transform: translateX(0);
+  }
+
+  .navLinks {
+    flex-direction: column;
+    text-align: center;
+    gap: 2rem;
+  }
+
+  .navLink {
+    font-size: 1.5rem;
+    color: white !important;
+  }
+
+  .authButtons {
+    flex-direction: column;
+    width: 100%;
+    margin-top: 2rem;
+  }
+
+  .loginBtn,
+  .registerBtn {
+    width: 100%;
+    text-align: center;
+    padding: 1rem;
+    color: white !important;
+  }
+}

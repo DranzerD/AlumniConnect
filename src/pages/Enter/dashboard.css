@@ -1,0 +1,159 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background-color: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+}
+
+.dashboard-header {
+    background-color: #4a7766;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+.dashboard-header h1 {
+    font-size: 2rem;
+}
+
+.dashboard-header p {
+    font-size: 1.2rem;
+}
+
+.profile-overview {
+    background-color: white;
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.profile-overview h2 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+}
+
+.profile-overview p {
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+.profile-overview a {
+    color: #4a7766;
+    text-decoration: none;
+}
+
+.profile-overview a:hover {
+    text-decoration: underline;
+}
+
+.personalized-recommendations {
+    background-color: white;
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.personalized-recommendations h2 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+}
+
+.recommendation {
+    margin-bottom: 20px;
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+.recommendation h3 {
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.recommendation a {
+    color: #4a7766;
+    text-decoration: none;
+}
+
+.recommendation a:hover {
+    text-decoration: underline;
+}
+
+.notifications {
+    background-color: white;
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.notifications h2 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+}
+
+.notifications ul {
+    list-style-type: none;
+}
+
+.notifications li {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.notifications li strong {
+    color: #4a7766;
+}
+
+.quick-links {
+    background-color: white;
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.quick-links h2 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+}
+
+.quick-links ul {
+    list-style: none;
+    padding: 0;
+}
+
+.quick-links li {
+    display: inline-block;
+    margin: 10px 15px;
+}
+
+.quick-links a {
+    color: #4a7766;
+    text-decoration: none;
+    font-size: 1.2rem;
+}
+
+.quick-links a:hover {
+    text-decoration: underline;
+}
+
+.dashboard-footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 10px;
+    margin-top: 40px;
+}

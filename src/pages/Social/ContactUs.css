@@ -1,0 +1,74 @@
+/* General styles for the container */
+.contact-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border: 2px solid #4a7766;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
+}
+
+/* Title styling */
+.contact-title {
+  background-color: #4a7766;
+  color: #ffffff;
+  text-align: center;
+  padding: 10px;
+  font-size: 24px;
+  border-radius: 10px 10px 0 0;
+  margin: 0;
+}
+
+/* Description text */
+.contact-description {
+  text-align: center;
+  margin: 20px 0;
+  color: #333333;
+  font-size: 16px;
+}
+
+/* Form styling */
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Labels */
+.contact-label {
+  font-size: 14px;
+  color: #333333;
+}
+
+/* Input and Textarea fields */
+.contact-input,
+.contact-textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid #4a7766;
+  border-radius: 5px;
+}
+
+.contact-textarea {
+  height: 100px;
+  resize: none;
+}
+
+/* Submit Button */
+.contact-button {
+  background-color: #4a7766;
+  color: #ffffff;
+  padding: 10px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.contact-button:hover {
+  background-color: #4a7766;
+}

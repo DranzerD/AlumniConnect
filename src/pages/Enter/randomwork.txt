@@ -1,0 +1,72 @@
+{/* Networking Hub Section */}
+      <section id="networking" style={styles.section}>
+        <h2 style={styles.sectionTitle}>Networking Hub</h2>
+        <p>Connect with alumni based on industries, locations, and interests.</p>
+        <p>Explore mentorship and collaboration opportunities to strengthen professional ties.</p>
+        <button style={styles.heroButton}>Find Connections</button>
+      </section>
+
+      {/* Job Portal Section */}
+      <section id="jobs" style={styles.sectionLight}>
+        <h2 style={styles.sectionTitle}>Job Portal</h2>
+        <p>Discover career opportunities or post job openings for fellow alumni.</p>
+        <p>Personalized job matching ensures you find the right fit effortlessly.</p>
+        <button style={styles.heroButton}>Explore Jobs</button>
+      </section>
+
+      {/* Alumni Directory Section */}
+      <section id="directory" style={styles.section}>
+        <h2 style={styles.sectionTitle}>Alumni Directory</h2>
+        <p>Search and filter alumni by graduation year, industry, or location.</p>
+        <button style={styles.heroButton}>Browse Directory</button>
+      </section>
+
+      {/* Success Story Tracking Section */}
+      <section id="success-stories" style={styles.sectionLight}>
+        <h2 style={styles.sectionTitle}>Success Stories</h2>
+        <p>Celebrate alumni achievements and inspire the next generation of students and graduates.</p>
+        <div style={styles.storyList}>
+          <div style={styles.storyCard}>
+            <h3>John Doe</h3>
+            <p>CEO at TechCorp - Class of 2010</p>
+          </div>
+          <div style={styles.storyCard}>
+            <h3>Jane Smith</h3>
+            <p>Founder of GreenEarth - Class of 2015</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Events and Reunions Section */}
+      <section id="events" style={styles.section}>
+        <h2 style={styles.sectionTitle}>Events and Reunions</h2>
+        <p>Join reunions, professional development workshops, and networking events organized for alumni.</p>
+        <button style={styles.heroButton}>View Events</button>
+      </section>
+
+      {/* Feedback and Surveys Section */}
+      <section id="feedback" style={styles.sectionLight}>
+        <h2 style={styles.sectionTitle}>Feedback and Surveys</h2>
+        <p>Share your thoughts to help us improve and shape the future of our platform.</p>
+        <button style={styles.heroButton}>Give Feedback</button>
+      </section>
+
+      <nav style={styles.nav}>
+          <a href="#registration" style={styles.navLink}>Registration</a>
+          <a href="#donations" style={styles.navLink}>Donations</a>
+          <a href="#networking" style={styles.navLink}>Networking</a>
+          <a href="#jobs" style={styles.navLink}>Jobs</a>
+          <a href="#directory" style={styles.navLink}>Directory</a>
+          <a href="#events" style={styles.navLink}>Events</a>
+          <a href="#feedback" style={styles.navLink}>Feedback</a>
+        </nav>
+
+    <section className="quick-links">
+                <h2>Quick Links</h2>
+                <ul>
+                    <li><a href="#">Job Portal</a></li>
+                    <li><a href="#">Alumni Directory</a></li>
+                    <li><a href="#">Donation Portal</a></li>
+                    <li><a href="#">Events</a></li>
+                </ul>
+            </section>

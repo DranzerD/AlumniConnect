@@ -1,0 +1,389 @@
+.container {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.leftPanel {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  padding: 3rem;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.leftPanel::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    circle,
+    rgba(102, 126, 234, 0.15) 0%,
+    transparent 60%
+  );
+}
+
+.brandContent {
+  position: relative;
+  z-index: 1;
+  max-width: 500px;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  text-decoration: none;
+  margin-bottom: 3rem;
+  display: block;
+}
+
+.headline {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+}
+
+.tagline {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.125rem;
+  line-height: 1.6;
+  margin-bottom: 3rem;
+}
+
+.features {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.featureItem {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.featureIcon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.featureItem h4 {
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.featureItem p {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.rightPanel {
+  background: #f8fafc;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.formContainer {
+  width: 100%;
+  max-width: 440px;
+}
+
+.formHeader {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.formTitle {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 0.5rem;
+}
+
+.formSubtitle {
+  color: #6b7280;
+}
+
+.loginLink {
+  color: #667eea;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.loginLink:hover {
+  text-decoration: underline;
+}
+
+.stepIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stepNumber {
+  width: 36px;
+  height: 36px;
+  background: #e5e7eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #9ca3af;
+  transition: all 0.3s ease;
+}
+
+.step.active .stepNumber {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.step span {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.step.active span {
+  color: #667eea;
+}
+
+.stepLine {
+  width: 80px;
+  height: 2px;
+  background: #e5e7eb;
+  margin: 0 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.form {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.stepContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.formGroup label {
+  font-weight: 600;
+  color: #1a1a2e;
+  font-size: 0.9375rem;
+}
+
+.formGroup input,
+.formGroup select {
+  padding: 0.875rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.formGroup input:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.inputError {
+  border-color: #ef4444 !important;
+}
+
+.error {
+  color: #ef4444;
+  font-size: 0.8125rem;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.roleOptions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.roleOption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.roleOption input {
+  display: none;
+}
+
+.roleOption:hover {
+  border-color: #c7d2fe;
+  background: #f8fafc;
+}
+
+.roleSelected {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.roleIcon {
+  font-size: 1.5rem;
+}
+
+.roleLabel {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.roleSelected .roleLabel {
+  color: #667eea;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.nextBtn,
+.submitBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nextBtn:hover,
+.submitBtn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.nextBtn svg,
+.backBtn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.submitBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.backBtn {
+  flex: 0.4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #f1f5f9;
+  color: #475569;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.backBtn:hover {
+  background: #e2e8f0;
+}
+
+.terms {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.8125rem;
+  margin-top: 1.5rem;
+}
+
+.terms a {
+  color: #667eea;
+  text-decoration: none;
+}
+
+.terms a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 1024px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+
+  .leftPanel {
+    display: none;
+  }
+
+  .rightPanel {
+    padding: 2rem 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+
+  .roleOptions {
+    grid-template-columns: 1fr;
+  }
+
+  .buttonGroup {
+    flex-direction: column-reverse;
+  }
+
+  .backBtn {
+    flex: 1;
+  }
+}

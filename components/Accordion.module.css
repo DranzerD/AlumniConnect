@@ -1,0 +1,121 @@
+.accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.item {
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+
+.item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.item.open {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 1.25rem;
+  border: none;
+  background: none;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s ease;
+}
+
+.header:hover {
+  background-color: #f9f9f9;
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #e0f2fe, #f0e7fe);
+  border-radius: 8px;
+  font-size: 1.25rem;
+}
+
+.title {
+  flex: 1;
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: #666;
+}
+
+.chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  transition: transform 0.3s ease;
+}
+
+.item.open .chevron {
+  transform: rotate(180deg);
+}
+
+.content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease;
+}
+
+.item.open .content {
+  grid-template-rows: 1fr;
+}
+
+.contentInner {
+  overflow: hidden;
+  padding: 0 1.25rem;
+}
+
+.item.open .contentInner {
+  padding: 0 1.25rem 1.25rem;
+}
+
+/* FAQ Styles */
+.faq {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.faq .item {
+  background: #f9fafb;
+}
+
+.faq .header {
+  font-weight: 600;
+}
+
+.faq .contentInner p {
+  margin: 0;
+  color: #555;
+  line-height: 1.7;
+}

@@ -1,0 +1,74 @@
+/* General styles for the container */
+.feedback-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border: 2px solid #4a7766;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
+}
+
+/* Title styling */
+.feedback-title {
+  background-color: #4a7766;
+  color: #ffffff;
+  text-align: center;
+  padding: 10px;
+  font-size: 24px;
+  border-radius: 10px 10px 0 0;
+  margin: 0;
+}
+
+/* Description text */
+.feedback-description {
+  text-align: center;
+  margin: 20px 0;
+  color: #333333;
+  font-size: 16px;
+}
+
+/* Form styling */
+.feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Labels */
+.feedback-label {
+  font-size: 14px;
+  color: #333333;
+}
+
+/* Input and Textarea fields */
+.feedback-input,
+.feedback-textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid #4a7766;
+  border-radius: 5px;
+}
+
+.feedback-textarea {
+  height: 100px;
+  resize: none;
+}
+
+/* Submit Button */
+.feedback-button {
+  background-color: #4a7766;
+  color: #ffffff;
+  padding: 10px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.feedback-button:hover {
+  background-color: #4a7766;
+}
