@@ -1,209 +1,121 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Toast from "@/components/Toast";
-import ProfileCompleteness from "@/components/ProfileCompleteness";
-import { useToast } from "@/hooks/useToast";
-import styles from "./profile.module.css";
+import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { api } from "@/lib/client";
+import { useToast } from "@/components/Toast";
+import { Field, SkeletonList } from "@/components/ui";
 
-export default function ProfilePage() {
+const TEXT_FIELDS = [
+  ["full_name", "Full name", { required: true }],
+  ["headline", "Headline", { placeholder: "e.g. Backend Engineer at Stripe", full: true }],
+  ["current_role", "Current role"],
+  ["current_company", "Company"],
+  ["degree", "Degree", { placeholder: "B.Tech Computer Science" }],
+  ["department", "Department"],
+  ["graduation_year", "Graduation year", { type: "number" }],
+  ["location", "Location"],
+  ["linkedin_url", "LinkedIn URL", { type: "url" }],
+  ["github_url", "GitHub URL", { type: "url" }],
+  ["skills", "Skills", { placeholder: "Comma-separated, e.g. Java, SQL, React", full: true }],
+];
+
+function EditProfileForm() {
+  const toast = useToast();
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const welcome = useSearchParams().get("welcome");
+  const [form, setForm] = useState(null);
+  const [meta, setMeta] = useState(null);
+  const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
-  const { toast, showToast, hideToast } = useToast();
-  const [profile, setProfile] = useState({
-    full_name: "",
-    graduation_year: "",
-    degree: "",
-    department: "",
-    current_company: "",
-    current_role: "",
-    location: "",
-    linkedin_url: "",
-    github_url: "",
-    bio: "",
-    profile_visibility: true,
-  });
 
   useEffect(() => {
-    fetchProfile();
+    api("/api/profiles/me").then(({ profile }) => {
+      setMeta(profile);
+      setForm(Object.fromEntries(
+        [...TEXT_FIELDS.map(([f]) => f), "bio"].map((f) => [f, profile[f] ?? ""])
+          .concat([["is_public", Boolean(profile.is_public)], ["open_to_mentor", Boolean(profile.open_to_mentor)]]),
+      ));
+    });
   }, []);
 
-  const fetchProfile = async () => {
-    const res = await fetch("/api/profiles/me");
-    if (res.ok) {
-      const data = await res.json();
-      setProfile(data.profile);
-    }
-    setLoading(false);
-  };
+  if (!form) return <SkeletonList rows={6} />;
 
-  const handleSubmit = async (e) => {
+  const canMentor = ["alumni", "faculty"].includes(meta.role);
+  const set = (field) => (e) =>
+    setForm((f) => ({ ...f, [field]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
+
+  async function save(e) {
     e.preventDefault();
     setSaving(true);
-
-    const res = await fetch("/api/profiles/me", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(profile),
-    });
-
-    if (res.ok) {
-      showToast("Profile updated successfully!", "success");
-    } else {
-      showToast("Failed to update profile", "error");
+    setErrors({});
+    try {
+      const body = { ...form };
+      if (!canMentor) delete body.open_to_mentor;
+      await api("/api/profiles/me", { method: "PUT", body });
+      toast("Profile saved", "success");
+      router.refresh();
+    } catch (err) {
+      setErrors(err.details);
+      toast(err.message, "error");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-  };
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setProfile({
-      ...profile,
-      [name]: type === "checkbox" ? checked : value,
-    });
-  };
-
-  if (loading) return <p>Loading...</p>;
+  }
 
   return (
-    <div className={styles.container}>
-      {toast && (
-        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
+    <>
+      <div className="page-header">
+        <div>
+          <h1>Edit profile</h1>
+          <p>{meta.email} · {meta.college_name}</p>
+        </div>
+        <Link href={`/dashboard/people/${meta.id}`} className="btn">View as others see it</Link>
+      </div>
+
+      {welcome && (
+        <div className="alert alert-info" style={{ marginBottom: "var(--s4)" }}>
+          Your account is ready. Add a headline and a few details so people in your college can find you.
+        </div>
       )}
 
-      <h1 className={styles.title}>My Profile</h1>
-
-      <ProfileCompleteness profile={profile} />
-
-      <form onSubmit={handleSubmit} className={styles.form}>
-        <div className={styles.formGroup}>
-          <label>Full Name *</label>
-          <input
-            type="text"
-            name="full_name"
-            value={profile.full_name}
-            onChange={handleChange}
-            required
-          />
+      <form className="card stack" style={{ maxWidth: 720 }} onSubmit={save} noValidate>
+        <div className="form-grid">
+          {TEXT_FIELDS.map(([field, label, opts = {}]) => (
+            <Field key={field} label={label} htmlFor={field} error={errors[field]} className={opts.full ? "full" : ""}>
+              <input id={field} className="input" type={opts.type ?? "text"} placeholder={opts.placeholder}
+                value={form[field]} onChange={set(field)} aria-invalid={Boolean(errors[field])} required={opts.required} />
+            </Field>
+          ))}
+          <Field label="Bio" htmlFor="bio" error={errors.bio} className="full" hint={`${form.bio.length}/1000`}>
+            <textarea id="bio" className="textarea" maxLength={1000} value={form.bio} onChange={set("bio")} />
+          </Field>
         </div>
 
-        <div className={styles.formRow}>
-          <div className={styles.formGroup}>
-            <label>Graduation Year</label>
-            <input
-              type="number"
-              name="graduation_year"
-              value={profile.graduation_year}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Degree</label>
-            <input
-              type="text"
-              name="degree"
-              value={profile.degree}
-              onChange={handleChange}
-              placeholder="e.g., B.Tech Computer Science"
-            />
-          </div>
-        </div>
-
-        <div className={styles.formGroup}>
-          <label>Department</label>
-          <input
-            type="text"
-            name="department"
-            value={profile.department}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className={styles.formRow}>
-          <div className={styles.formGroup}>
-            <label>Current Company</label>
-            <input
-              type="text"
-              name="current_company"
-              value={profile.current_company}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Current Role</label>
-            <input
-              type="text"
-              name="current_role"
-              value={profile.current_role}
-              onChange={handleChange}
-            />
-          </div>
-        </div>
-
-        <div className={styles.formGroup}>
-          <label>Location</label>
-          <input
-            type="text"
-            name="location"
-            value={profile.location}
-            onChange={handleChange}
-            placeholder="e.g., San Francisco, CA"
-          />
-        </div>
-
-        <div className={styles.formGroup}>
-          <label>LinkedIn URL</label>
-          <input
-            type="url"
-            name="linkedin_url"
-            value={profile.linkedin_url}
-            onChange={handleChange}
-            placeholder="https://linkedin.com/in/yourprofile"
-          />
-        </div>
-
-        <div className={styles.formGroup}>
-          <label>GitHub URL (Optional)</label>
-          <input
-            type="url"
-            name="github_url"
-            value={profile.github_url}
-            onChange={handleChange}
-            placeholder="https://github.com/yourusername"
-          />
-        </div>
-
-        <div className={styles.formGroup}>
-          <label>Bio</label>
-          <textarea
-            name="bio"
-            value={profile.bio}
-            onChange={handleChange}
-            rows={4}
-            placeholder="Tell others about yourself..."
-          />
-        </div>
-
-        <div className={styles.formGroup}>
-          <label className={styles.checkboxLabel}>
-            <input
-              type="checkbox"
-              name="profile_visibility"
-              checked={profile.profile_visibility}
-              onChange={handleChange}
-            />
-            <span>Make my profile visible to others</span>
+        <label className="checkbox">
+          <input type="checkbox" checked={form.is_public} onChange={set("is_public")} />
+          <span>Show my profile in the directory<br /><span className="small muted">Your connections can always see your profile.</span></span>
+        </label>
+        {canMentor && (
+          <label className="checkbox">
+            <input type="checkbox" checked={form.open_to_mentor} onChange={set("open_to_mentor")} />
+            <span>I&apos;m open to mentoring students<br /><span className="small muted">You&apos;ll appear on the Mentorship page.</span></span>
           </label>
-        </div>
+        )}
 
-        <button type="submit" className={styles.submitBtn} disabled={saving}>
-          {saving ? "Saving..." : "Save Profile"}
-        </button>
+        <div className="row" style={{ justifyContent: "flex-end" }}>
+          <button className="btn btn-primary" disabled={saving}>{saving ? "Saving…" : "Save changes"}</button>
+        </div>
       </form>
-    </div>
+    </>
+  );
+}
+
+export default function EditProfilePage() {
+  return (
+    <Suspense>
+      <EditProfileForm />
+    </Suspense>
   );
 }

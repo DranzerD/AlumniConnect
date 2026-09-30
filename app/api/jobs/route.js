@@ -1,196 +1,81 @@
-import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/session";
-import { query } from "@/lib/db";
+import { all, get, run } from "@/lib/db";
+import { handler, json, readJson, getPagination, HttpError } from "@/lib/http";
+import { requireUser } from "@/lib/session";
+import { validate } from "@/lib/validation";
+import { CAN_POST_JOBS, JOB_TYPES } from "@/lib/domain";
 
-const DEMO_JOBS = [
-  {
-    id: 1,
-    role_title: "Senior Frontend Developer",
-    company_name: "Tech Inc",
-    job_type: "full-time",
-    location: "Remote",
-    description: "Build amazing UIs with React",
-    requirements: "React, TypeScript",
-    apply_link: "#",
-  },
-  {
-    id: 2,
-    role_title: "Data Science Intern",
-    company_name: "AI Labs",
-    job_type: "internship",
-    location: "Boston",
-    description: "Work on ML projects",
-    requirements: "Python, ML",
-    apply_link: "#",
-  },
-  {
-    id: 3,
-    role_title: "Product Manager",
-    company_name: "Startup",
-    job_type: "full-time",
-    location: "SF",
-    description: "Lead product development",
-    requirements: "3+ years PM",
-    apply_link: "#",
-  },
-  {
-    id: 4,
-    role_title: "Backend Engineer",
-    company_name: "Cloud Co",
-    job_type: "full-time",
-    location: "Seattle",
-    description: "Build scalable APIs",
-    requirements: "Node.js, AWS",
-    apply_link: "#",
-  },
-  {
-    id: 5,
-    role_title: "UX Design Intern",
-    company_name: "Design Studio",
-    job_type: "internship",
-    location: "Remote",
-    description: "Design great experiences",
-    requirements: "Figma, Portfolio",
-    apply_link: "#",
-  },
-  {
-    id: 6,
-    role_title: "DevOps Engineer",
-    company_name: "Infrastructure Pro",
-    job_type: "full-time",
-    location: "Austin",
-    description: "Manage CI/CD pipelines",
-    requirements: "Kubernetes, AWS",
-    apply_link: "#",
-  },
-];
+// GET /api/jobs?q=&type=&remote=1&mine=1&status=open|closed&page=
+export const GET = handler(async (request) => {
+  const me = await requireUser();
+  const { searchParams } = request.nextUrl;
+  const { page, limit, offset } = getPagination(searchParams, { defaultLimit: 10 });
+  const q = searchParams.get("q")?.trim();
 
-export async function GET(request) {
-  const DEMO_MODE = process.env.DEMO_MODE === "true";
+  const params = {
+    me: me.id,
+    college: me.collegeId,
+    q: q ? `%${q.replace(/[\\%_]/g, "\\$&")}%` : null,
+    type: JOB_TYPES.includes(searchParams.get("type")) ? searchParams.get("type") : null,
+    remote: searchParams.get("remote") === "1" ? 1 : null,
+    mine: searchParams.get("mine") === "1" ? 1 : null,
+    status: searchParams.get("status") === "closed" ? "closed" : "open",
+  };
 
-  if (DEMO_MODE) {
-    const { searchParams } = new URL(request.url);
-    const jobType = searchParams.get("type");
+  const where = `
+    FROM jobs j JOIN profiles p ON p.user_id = j.posted_by
+    WHERE j.college_id = @college AND j.status = @status
+      AND (@q IS NULL OR j.title LIKE @q ESCAPE '\\' OR j.company_name LIKE @q ESCAPE '\\'
+           OR j.location LIKE @q ESCAPE '\\' OR j.description LIKE @q ESCAPE '\\')
+      AND (@type IS NULL OR j.job_type = @type)
+      AND (@remote IS NULL OR j.is_remote = 1)
+      AND (@mine IS NULL OR j.posted_by = @me)`;
 
-    let filtered = [...DEMO_JOBS];
-    if (jobType) filtered = filtered.filter((j) => j.job_type === jobType);
+  const { total } = get(`SELECT COUNT(*) AS total ${where}`, params);
+  const jobs = all(
+    `SELECT j.*, p.full_name AS posted_by_name, p.current_company AS poster_company,
+            (j.posted_by = @me) AS is_owner
+     ${where}
+     ORDER BY j.created_at DESC, j.id DESC
+     LIMIT @limit OFFSET @offset`,
+    { ...params, limit, offset },
+  );
 
-    return NextResponse.json({ jobs: filtered });
+  return json({
+    jobs,
+    canPost: CAN_POST_JOBS.includes(me.role),
+    pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+  });
+});
+
+export const POST = handler(async (request) => {
+  const me = await requireUser();
+  if (!CAN_POST_JOBS.includes(me.role)) {
+    throw new HttpError(403, "Only alumni, faculty and admins can post jobs");
   }
 
-  try {
-    const session = await requireAuth();
-    const { searchParams } = new URL(request.url);
+  const data = validate(await readJson(request), {
+    title: { type: "string", required: true, min: 3, max: 120 },
+    company_name: { type: "string", required: true, max: 80, label: "company" },
+    job_type: { type: "enum", required: true, values: JOB_TYPES, label: "job type" },
+    location: { type: "string", max: 80 },
+    is_remote: { type: "bool" },
+    description: { type: "string", required: true, min: 20, max: 5000 },
+    apply_url: { type: "url", required: true, label: "application link" },
+  });
 
-    const jobType = searchParams.get("type");
-    const status = searchParams.get("status") || "open";
+  const { lastInsertRowid } = run(
+    `INSERT INTO jobs (college_id, posted_by, company_name, title, job_type, location, is_remote, description, apply_url)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    me.collegeId,
+    me.id,
+    data.company_name,
+    data.title,
+    data.job_type,
+    data.location ?? null,
+    data.is_remote ? 1 : 0,
+    data.description,
+    data.apply_url,
+  );
 
-    let queryText = `
-      SELECT 
-        j.*,
-        p.full_name as posted_by_name
-      FROM jobs j
-      LEFT JOIN profiles p ON j.posted_by_user_id = p.user_id
-      WHERE j.college_id = $1
-        AND j.status = $2
-    `;
-    const params = [session.collegeId, status];
-    let paramCount = 2;
-
-    if (jobType) {
-      paramCount++;
-      queryText += ` AND j.job_type = $${paramCount}`;
-      params.push(jobType);
-    }
-
-    queryText += " ORDER BY j.created_at DESC";
-
-    const result = await query(queryText, params);
-
-    return NextResponse.json({ jobs: result.rows });
-  } catch (error) {
-    console.error("Get jobs error:", error);
-    if (error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(request) {
-  try {
-    const session = await requireAuth();
-
-    // Only alumni and admin can post jobs
-    if (!["alumni", "admin"].includes(session.role)) {
-      return NextResponse.json(
-        { error: "Only alumni and admins can post jobs" },
-        { status: 403 }
-      );
-    }
-
-    const data = await request.json();
-    const {
-      company_name,
-      role_title,
-      job_type,
-      location,
-      description,
-      requirements,
-      apply_link,
-    } = data;
-
-    if (
-      !company_name ||
-      !role_title ||
-      !job_type ||
-      !description ||
-      !apply_link
-    ) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    if (!["internship", "full-time"].includes(job_type)) {
-      return NextResponse.json({ error: "Invalid job type" }, { status: 400 });
-    }
-
-    const result = await query(
-      `INSERT INTO jobs (
-        college_id, posted_by_user_id, company_name, role_title,
-        job_type, location, description, requirements, apply_link
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING id`,
-      [
-        session.collegeId,
-        session.userId,
-        company_name,
-        role_title,
-        job_type,
-        location,
-        description,
-        requirements || "",
-        apply_link,
-      ]
-    );
-
-    return NextResponse.json({
-      success: true,
-      jobId: result.rows[0].id,
-    });
-  } catch (error) {
-    console.error("Create job error:", error);
-    if (error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
+  return json({ job: get("SELECT * FROM jobs WHERE id = ?", lastInsertRowid) }, { status: 201 });
+});

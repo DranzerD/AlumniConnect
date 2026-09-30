@@ -1,97 +1,23 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import styles from "./Modal.module.css";
+import { useEffect } from "react";
 
-export default function Modal({
-  isOpen,
-  onClose,
-  title,
-  children,
-  size = "medium",
-  showCloseButton = true,
-  closeOnOverlayClick = true,
-}) {
-  const [isVisible, setIsVisible] = useState(false);
-  const modalRef = useRef(null);
-
+export default function Modal({ title, onClose, children }) {
   useEffect(() => {
-    if (isOpen) {
-      setIsVisible(true);
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-
+    const onKey = (e) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = "unset";
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
     };
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === "Escape" && isOpen) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onClose]);
-
-  const handleOverlayClick = (e) => {
-    if (closeOnOverlayClick && e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
-  const handleAnimationEnd = () => {
-    if (!isOpen) {
-      setIsVisible(false);
-    }
-  };
-
-  if (!isVisible && !isOpen) return null;
+  }, [onClose]);
 
   return (
-    <div
-      className={`${styles.overlay} ${isOpen ? styles.open : styles.closing}`}
-      onClick={handleOverlayClick}
-      onAnimationEnd={handleAnimationEnd}
-    >
-      <div
-        ref={modalRef}
-        className={`${styles.modal} ${styles[size]}`}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-title"
-      >
-        {(title || showCloseButton) && (
-          <div className={styles.header}>
-            {title && (
-              <h2 id="modal-title" className={styles.title}>
-                {title}
-              </h2>
-            )}
-            {showCloseButton && (
-              <button
-                className={styles.closeBtn}
-                onClick={onClose}
-                aria-label="Close modal"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-          </div>
-        )}
-        <div className={styles.content}>{children}</div>
+    <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal" role="dialog" aria-modal="true" aria-label={title}>
+        <h2>{title}</h2>
+        {children}
       </div>
     </div>
   );

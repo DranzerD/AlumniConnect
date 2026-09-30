@@ -1,178 +1,66 @@
-import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/session";
-import { query } from "@/lib/db";
+import { all, get } from "@/lib/db";
+import { handler, json, getPagination } from "@/lib/http";
+import { requireUser } from "@/lib/session";
+import { CONNECTION_STATUS_SQL } from "@/lib/domain";
 
-const DEMO_PROFILES = [
-  {
-    id: 1,
-    full_name: "Sarah Johnson",
-    graduation_year: 2020,
-    department: "Computer Science",
-    current_company: "Google",
-    current_role: "Software Engineer",
-    location: "San Francisco, CA",
-    bio: "Passionate about web development",
-    email: "sarah@demo.com",
-  },
-  {
-    id: 2,
-    full_name: "Mike Chen",
-    graduation_year: 2019,
-    department: "Data Science",
-    current_company: "Microsoft",
-    current_role: "Data Scientist",
-    location: "Seattle, WA",
-    bio: "ML enthusiast",
-    email: "mike@demo.com",
-  },
-  {
-    id: 3,
-    full_name: "Emily Rodriguez",
-    graduation_year: 2021,
-    department: "Business",
-    current_company: "Amazon",
-    current_role: "Product Manager",
-    location: "New York, NY",
-    bio: "Building products",
-    email: "emily@demo.com",
-  },
-  {
-    id: 4,
-    full_name: "David Kim",
-    graduation_year: 2018,
-    department: "Engineering",
-    current_company: "Tesla",
-    current_role: "Engineer",
-    location: "Austin, TX",
-    bio: "Sustainable energy",
-    email: "david@demo.com",
-  },
-  {
-    id: 5,
-    full_name: "Lisa Wang",
-    graduation_year: 2022,
-    department: "Computer Science",
-    current_company: "Meta",
-    current_role: "Developer",
-    location: "Remote",
-    bio: "UX enthusiast",
-    email: "lisa@demo.com",
-  },
-  {
-    id: 6,
-    full_name: "James Brown",
-    graduation_year: 2020,
-    department: "Marketing",
-    current_company: "Salesforce",
-    current_role: "Manager",
-    location: "Chicago, IL",
-    bio: "Marketing pro",
-    email: "james@demo.com",
-  },
-];
+const likeParam = (value) => (value ? `%${value.replace(/[\\%_]/g, "\\$&")}%` : null);
 
-export async function GET(request) {
-  const DEMO_MODE = process.env.DEMO_MODE === "true";
+// GET /api/profiles?q=&role=&year=&department=&mentors=1&page=&limit=
+export const GET = handler(async (request) => {
+  const me = await requireUser();
+  const { searchParams } = request.nextUrl;
+  const { page, limit, offset } = getPagination(searchParams, { defaultLimit: 12 });
 
-  if (DEMO_MODE) {
-    const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search") || "";
-    const year = searchParams.get("year");
-    const company = searchParams.get("company");
-    const department = searchParams.get("department");
-    const location = searchParams.get("location");
+  const params = {
+    me: me.id,
+    college: me.collegeId,
+    q: likeParam(searchParams.get("q")?.trim()),
+    role: searchParams.get("role") || null,
+    year: parseInt(searchParams.get("year"), 10) || null,
+    department: searchParams.get("department") || null,
+    mentors: searchParams.get("mentors") === "1" ? 1 : null,
+  };
 
-    let filtered = [...DEMO_PROFILES];
-    if (search)
-      filtered = filtered.filter(
-        (p) =>
-          p.full_name.toLowerCase().includes(search.toLowerCase()) ||
-          p.current_company.toLowerCase().includes(search.toLowerCase())
-      );
-    if (year) filtered = filtered.filter((p) => p.graduation_year == year);
-    if (company)
-      filtered = filtered.filter((p) =>
-        p.current_company.toLowerCase().includes(company.toLowerCase())
-      );
-    if (department)
-      filtered = filtered.filter((p) =>
-        p.department.toLowerCase().includes(department.toLowerCase())
-      );
-    if (location)
-      filtered = filtered.filter((p) =>
-        p.location.toLowerCase().includes(location.toLowerCase())
-      );
+  const where = `
+    FROM users u
+    JOIN profiles p ON p.user_id = u.id
+    LEFT JOIN connections c
+      ON (c.requester_id = u.id AND c.addressee_id = @me)
+      OR (c.addressee_id = u.id AND c.requester_id = @me)
+    WHERE u.college_id = @college AND u.is_active = 1 AND p.is_public = 1 AND u.id <> @me
+      AND (@q IS NULL OR p.full_name LIKE @q ESCAPE '\\' OR p.current_company LIKE @q ESCAPE '\\'
+           OR p.headline LIKE @q ESCAPE '\\' OR p.skills LIKE @q ESCAPE '\\')
+      AND (@role IS NULL OR u.role = @role)
+      AND (@year IS NULL OR p.graduation_year = @year)
+      AND (@department IS NULL OR p.department = @department)
+      AND (@mentors IS NULL OR p.open_to_mentor = 1)`;
 
-    return NextResponse.json({ profiles: filtered });
-  }
+  const { total } = get(`SELECT COUNT(*) AS total ${where}`, params);
+  const profiles = all(
+    `SELECT u.id, u.role, p.full_name, p.headline, p.graduation_year, p.department,
+            p.current_company, p.current_role, p.location, p.skills, p.open_to_mentor,
+            ${CONNECTION_STATUS_SQL} AS connection_status
+     ${where}
+     ORDER BY p.full_name COLLATE NOCASE
+     LIMIT @limit OFFSET @offset`,
+    { ...params, limit, offset },
+  );
 
-  try {
-    const session = await requireAuth();
-    const { searchParams } = new URL(request.url);
+  // Values for the directory's filter dropdowns.
+  const departments = all(
+    `SELECT DISTINCT p.department FROM profiles p JOIN users u ON u.id = p.user_id
+      WHERE u.college_id = ? AND p.department IS NOT NULL ORDER BY p.department`,
+    me.collegeId,
+  ).map((r) => r.department);
+  const years = all(
+    `SELECT DISTINCT p.graduation_year FROM profiles p JOIN users u ON u.id = p.user_id
+      WHERE u.college_id = ? AND p.graduation_year IS NOT NULL ORDER BY p.graduation_year DESC`,
+    me.collegeId,
+  ).map((r) => r.graduation_year);
 
-    const search = searchParams.get("search") || "";
-    const year = searchParams.get("year");
-    const company = searchParams.get("company");
-    const department = searchParams.get("department");
-    const location = searchParams.get("location");
-
-    let queryText = `
-      SELECT 
-        p.*,
-        u.email,
-        u.role
-      FROM profiles p
-      JOIN users u ON p.user_id = u.id
-      WHERE u.college_id = $1
-        AND u.is_active = true
-        AND p.profile_visibility = true
-    `;
-    const params = [session.collegeId];
-    let paramCount = 1;
-
-    if (search) {
-      paramCount++;
-      queryText += ` AND (p.full_name ILIKE $${paramCount} OR p.current_company ILIKE $${paramCount})`;
-      params.push(`%${search}%`);
-    }
-
-    if (year) {
-      paramCount++;
-      queryText += ` AND p.graduation_year = $${paramCount}`;
-      params.push(year);
-    }
-
-    if (company) {
-      paramCount++;
-      queryText += ` AND p.current_company ILIKE $${paramCount}`;
-      params.push(`%${company}%`);
-    }
-
-    if (department) {
-      paramCount++;
-      queryText += ` AND p.department ILIKE $${paramCount}`;
-      params.push(`%${department}%`);
-    }
-
-    if (location) {
-      paramCount++;
-      queryText += ` AND p.location ILIKE $${paramCount}`;
-      params.push(`%${location}%`);
-    }
-
-    queryText += " ORDER BY p.full_name ASC";
-
-    const result = await query(queryText, params);
-
-    return NextResponse.json({ profiles: result.rows });
-  } catch (error) {
-    console.error("Get profiles error:", error);
-    if (error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
+  return json({
+    profiles,
+    pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+    filters: { departments, years },
+  });
+});

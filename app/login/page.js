@@ -1,108 +1,125 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import styles from "./login.module.css";
-import { useToast } from "../../hooks/useToast";
-import Toast from "../../components/Toast";
+import { Suspense, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { api } from "@/lib/client";
+import { Field } from "@/components/ui";
+import Logo from "@/components/Logo";
 
-export default function LoginPage() {
+const DEMO_ACCOUNTS = [
+  { label: "Student", email: "emily.davis@northwood.edu" },
+  { label: "Alumni / mentor", email: "sarah.johnson@northwood.edu" },
+  { label: "College admin", email: "admin@northwood.edu" },
+];
+const DEMO_PASSWORD = "Password123!";
+
+// Only allow redirects to paths on this site.
+function safeNext(value) {
+  return value && value.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
+}
+
+function LoginForm() {
+  const router = useRouter();
+  const next = safeNext(useSearchParams().get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { toast, showToast, hideToast } = useToast();
-  const router = useRouter();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  async function signIn(credentials) {
     setError("");
     setLoading(true);
-
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Login failed");
-        setLoading(false);
-        return;
-      }
-
-      if (data.user.mustResetPassword) {
-        router.push("/reset-password");
-      } else if (data.user.role === "admin") {
-        showToast("Welcome, Admin!", "success");
-        setTimeout(() => router.push("/admin"), 1000);
-      } else {
-        showToast("Login successful!", "success");
-        setTimeout(() => router.push("/dashboard"), 1000);
-      }
+      await api("/api/auth/login", { method: "POST", body: credentials });
+      router.replace(next);
+      router.refresh();
     } catch (err) {
-      setError("An error occurred. Please try again.");
+      setError(err.message);
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <>
-      {toast && (
-        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
-      )}
+    <div className="auth-card">
+      <Link href="/" className="auth-brand">
+        <Logo />
+      </Link>
+      <h1>Sign in</h1>
+      <p className="muted small" style={{ marginBottom: "var(--s6)" }}>
+        Use your college email address.
+      </p>
 
-      <div className={styles.container}>
-        <div className={styles.loginBox}>
-          <h1 className={styles.title}>AlumniConnect</h1>
-          <p className={styles.subtitle}>Sign in to your account</p>
+      <form
+        className="stack"
+        onSubmit={(e) => {
+          e.preventDefault();
+          signIn({ email, password });
+        }}
+      >
+        {error && (
+          <div className="alert alert-error" role="alert">
+            {error}
+          </div>
+        )}
+        <Field label="Email" htmlFor="email">
+          <input
+            id="email"
+            className="input"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </Field>
+        <Field label="Password" htmlFor="password">
+          <input
+            id="password"
+            className="input"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </Field>
+        <button className="btn btn-primary btn-block" disabled={loading}>
+          {loading ? "Signing in…" : "Sign in"}
+        </button>
+      </form>
 
-          {error && <div className={styles.error}>{error}</div>}
+      <p className="small muted" style={{ marginTop: "var(--s4)" }}>
+        New here? <Link href="/register">Create an account</Link>
+      </p>
 
-          <form onSubmit={handleSubmit} className={styles.form}>
-            <div className={styles.formGroup}>
-              <label htmlFor="email">College Email</label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="you@college.edu"
-                disabled={loading}
-              />
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="password">Password</label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="Enter your password"
-                disabled={loading}
-              />
-            </div>
-
-            <button
-              type="submit"
-              className={styles.submitBtn}
-              disabled={loading}
-            >
-              {loading ? "Signing in..." : "Sign In"}
-            </button>
-          </form>
-
-          <p className={styles.footer}>
-            Contact your college admin if you need access
-          </p>
-        </div>
+      <div className="demo-accounts">
+        <p>
+          <strong>Demo accounts</strong>
+          <span className="muted"> · password <span className="mono">{DEMO_PASSWORD}</span></span>
+        </p>
+        {DEMO_ACCOUNTS.map((account) => (
+          <button
+            key={account.email}
+            type="button"
+            disabled={loading}
+            onClick={() => signIn({ email: account.email, password: DEMO_PASSWORD })}
+          >
+            <span>{account.label}</span>
+            <span className="muted truncate">{account.email}</span>
+          </button>
+        ))}
       </div>
-    </>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <main className="auth-page">
+      <Suspense>
+        <LoginForm />
+      </Suspense>
+    </main>
   );
 }

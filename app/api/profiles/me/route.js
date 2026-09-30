@@ -1,158 +1,73 @@
-import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/session";
-import { query } from "@/lib/db";
+import { get, run } from "@/lib/db";
+import { handler, json, readJson, HttpError } from "@/lib/http";
+import { requireUser } from "@/lib/session";
+import { validate } from "@/lib/validation";
+import { CAN_MENTOR } from "@/lib/domain";
 
-const DEMO_PROFILE = {
-  full_name: "Demo User",
-  graduation_year: 2022,
-  degree: "Bachelor of Science",
-  department: "Computer Science",
-  current_company: "Tech Corp",
-  current_role: "Software Developer",
-  location: "San Francisco, CA",
-  linkedin_url: "",
-  github_url: "",
-  bio: "Passionate developer building great products.",
-  profile_visibility: true,
-  email: "demo@example.com",
-  role: "student",
+const currentYear = new Date().getFullYear();
+
+const PROFILE_RULES = {
+  full_name: { type: "string", required: true, min: 2, max: 80, label: "full name" },
+  headline: { type: "string", max: 120 },
+  graduation_year: { type: "int", min: 1950, max: currentYear + 6, label: "graduation year" },
+  degree: { type: "string", max: 80 },
+  department: { type: "string", max: 80 },
+  current_company: { type: "string", max: 80, label: "company" },
+  current_role: { type: "string", max: 80, label: "role" },
+  location: { type: "string", max: 80 },
+  bio: { type: "string", max: 1000 },
+  skills: { type: "string", max: 300 },
+  linkedin_url: { type: "url", label: "LinkedIn URL" },
+  github_url: { type: "url", label: "GitHub URL" },
+  is_public: { type: "bool" },
+  open_to_mentor: { type: "bool" },
 };
 
-export async function GET() {
-  const DEMO_MODE = process.env.DEMO_MODE === "true";
-
-  if (DEMO_MODE) {
-    return NextResponse.json({ profile: DEMO_PROFILE });
-  }
-
-  try {
-    const session = await requireAuth();
-
-    const result = await query(
-      `SELECT 
-        p.*,
-        u.email,
-        u.role
-      FROM profiles p
-      JOIN users u ON p.user_id = u.id
-      WHERE u.id = $1`,
-      [session.userId]
-    );
-
-    if (result.rows.length === 0) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({ profile: result.rows[0] });
-  } catch (error) {
-    console.error("Get my profile error:", error);
-    if (error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
+function loadProfile(userId) {
+  return get(
+    `SELECT u.id, u.email, u.role, c.name AS college_name, p.*
+       FROM users u JOIN profiles p ON p.user_id = u.id JOIN colleges c ON c.id = u.college_id
+      WHERE u.id = ?`,
+    userId,
+  );
 }
 
-export async function PUT(request) {
-  const DEMO_MODE = process.env.DEMO_MODE === "true";
+export const GET = handler(async () => {
+  const me = await requireUser();
+  return json({ profile: loadProfile(me.id) });
+});
 
-  if (DEMO_MODE) {
-    return NextResponse.json({ success: true, message: "Profile updated!" });
+// Partial update: only fields present in the body are changed.
+export const PUT = handler(async (request) => {
+  const me = await requireUser();
+  const data = validate(await readJson(request), PROFILE_RULES, { partial: true });
+
+  if (data.full_name === null) {
+    throw new HttpError(422, "Full name is required", { full_name: "Full name is required" });
+  }
+  if (data.open_to_mentor && !CAN_MENTOR.includes(me.role)) {
+    throw new HttpError(422, "Only alumni and faculty can offer mentorship");
+  }
+  if (typeof data.skills === "string") {
+    data.skills = data.skills
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 15)
+      .join(", ");
   }
 
-  try {
-    const session = await requireAuth();
-    const data = await request.json();
-
-    const {
-      full_name,
-      graduation_year,
-      degree,
-      department,
-      current_company,
-      current_role,
-      location,
-      linkedin_url,
-      github_url,
-      bio,
-      profile_visibility,
-    } = data;
-
-    // Check if profile exists
-    const existingProfile = await query(
-      "SELECT user_id FROM profiles WHERE user_id = $1",
-      [session.userId]
+  const fields = Object.keys(data);
+  if (fields.length > 0) {
+    const assignments = fields.map((f) => `${f} = @${f}`).join(", ");
+    const values = Object.fromEntries(
+      fields.map((f) => [f, typeof data[f] === "boolean" ? Number(data[f]) : data[f]]),
     );
-
-    if (existingProfile.rows.length === 0) {
-      // Create new profile
-      await query(
-        `INSERT INTO profiles (
-          user_id, full_name, graduation_year, degree, department,
-          current_company, current_role, location, linkedin_url,
-          github_url, bio, profile_visibility
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-        [
-          session.userId,
-          full_name,
-          graduation_year,
-          degree,
-          department,
-          current_company,
-          current_role,
-          location,
-          linkedin_url,
-          github_url,
-          bio,
-          profile_visibility ?? true,
-        ]
-      );
-    } else {
-      // Update existing profile
-      await query(
-        `UPDATE profiles SET
-          full_name = $1,
-          graduation_year = $2,
-          degree = $3,
-          department = $4,
-          current_company = $5,
-          current_role = $6,
-          location = $7,
-          linkedin_url = $8,
-          github_url = $9,
-          bio = $10,
-          profile_visibility = $11,
-          updated_at = CURRENT_TIMESTAMP
-        WHERE user_id = $12`,
-        [
-          full_name,
-          graduation_year,
-          degree,
-          department,
-          current_company,
-          current_role,
-          location,
-          linkedin_url,
-          github_url,
-          bio,
-          profile_visibility ?? true,
-          session.userId,
-        ]
-      );
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("Update profile error:", error);
-    if (error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+    run(
+      `UPDATE profiles SET ${assignments}, updated_at = datetime('now') WHERE user_id = @user_id`,
+      { ...values, user_id: me.id },
     );
   }
-}
+
+  return json({ profile: loadProfile(me.id) });
+});

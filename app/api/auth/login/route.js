@@ -1,47 +1,36 @@
-import { NextResponse } from "next/server";
-import { authenticate } from "@/lib/auth";
-import { serialize } from "cookie";
+import bcrypt from "bcryptjs";
+import { get, run } from "@/lib/db";
+import { handler, json, readJson, HttpError } from "@/lib/http";
+import { validate } from "@/lib/validation";
+import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { signSession, SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 
-export async function POST(request) {
-  try {
-    const { email, password } = await request.json();
+// Compared against when the email doesn't exist so response time doesn't reveal
+// which emails are registered.
+const DUMMY_HASH = bcrypt.hashSync("not-a-real-password", 10);
 
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: "Email and password are required" },
-        { status: 400 }
-      );
-    }
+export const POST = handler(async (request) => {
+  const { email, password } = validate(await readJson(request), {
+    email: { type: "email", required: true },
+    password: { type: "password", required: true, max: 72 },
+  });
 
-    const result = await authenticate(email, password);
+  rateLimit(`login:${clientIp(request)}:${email}`, { limit: 10, windowMs: 15 * 60 * 1000 });
 
-    if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 401 });
-    }
-
-    const response = NextResponse.json({
-      success: true,
-      user: result.user,
-    });
-
-    // Set HTTP-only cookie
-    response.headers.set(
-      "Set-Cookie",
-      serialize("token", result.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-        path: "/",
-      })
-    );
-
-    return response;
-  } catch (error) {
-    console.error("Login error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+  const user = get(
+    "SELECT id, college_id, password_hash, role, is_active FROM users WHERE email = ?",
+    email,
+  );
+  const valid = await bcrypt.compare(password, user?.password_hash ?? DUMMY_HASH);
+  if (!user || !valid) throw new HttpError(401, "Invalid email or password");
+  if (!user.is_active) {
+    throw new HttpError(403, "This account has been deactivated. Contact your college admin.");
   }
-}
+
+  run("UPDATE users SET last_login_at = datetime('now') WHERE id = ?", user.id);
+
+  const token = await signSession({ id: user.id, role: user.role, collegeId: user.college_id });
+  const response = json({ user: { id: user.id, role: user.role } });
+  response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions());
+  return response;
+});

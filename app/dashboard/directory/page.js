@@ -1,166 +1,136 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import ProfileAvatar from "@/components/ProfileAvatar";
-import { CardSkeleton } from "@/components/LoadingSkeleton";
-import { useDebounce } from "@/hooks/useDebounce";
-import styles from "./directory.module.css";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { api } from "@/lib/client";
+import { useDebounce } from "@/lib/hooks";
+import Avatar from "@/components/Avatar";
+import ConnectButton from "@/components/ConnectButton";
+import { EmptyState, ErrorState, Pagination, SkeletonList } from "@/components/ui";
+import { ROLE_LABELS } from "@/lib/format";
 
 export default function DirectoryPage() {
-  const [profiles, setProfiles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState({
-    year: "",
-    company: "",
-    department: "",
-    location: "",
-  });
+  const [q, setQ] = useState("");
+  const [filters, setFilters] = useState({ role: "", year: "", department: "", mentors: false });
+  const [page, setPage] = useState(1);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState("");
+  const [version, setVersion] = useState(0);
+  const query = useDebounce(q, 300);
 
-  const debouncedSearch = useDebounce(search, 500);
+  useEffect(() => setPage(1), [query, filters]);
 
   useEffect(() => {
-    fetchProfiles();
-  }, [debouncedSearch, filters]);
-
-  const fetchProfiles = async () => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (debouncedSearch) params.set("search", debouncedSearch);
+    const params = new URLSearchParams({ page: String(page) });
+    if (query) params.set("q", query);
+    if (filters.role) params.set("role", filters.role);
     if (filters.year) params.set("year", filters.year);
-    if (filters.company) params.set("company", filters.company);
     if (filters.department) params.set("department", filters.department);
-    if (filters.location) params.set("location", filters.location);
+    if (filters.mentors) params.set("mentors", "1");
 
-    const res = await fetch(`/api/profiles?${params}`);
-    const data = await res.json();
-    setProfiles(data.profiles || []);
-    setLoading(false);
-  };
+    let cancelled = false;
+    api(`/api/profiles?${params}`)
+      .then((res) => !cancelled && (setData(res), setError("")))
+      .catch((err) => !cancelled && setError(err.message));
+    return () => {
+      cancelled = true;
+    };
+  }, [query, filters, page, version]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-  };
+  const setFilter = (key) => (e) =>
+    setFilters((f) => ({ ...f, [key]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
 
   return (
-    <div className={styles.container}>
-      <h1 className={styles.title}>Alumni Directory</h1>
+    <>
+      <div className="page-header">
+        <div>
+          <h1>Directory</h1>
+          <p>Find students, alumni and faculty from your college.</p>
+        </div>
+      </div>
 
-      <form onSubmit={handleSearch} className={styles.searchForm}>
+      <div className="filters">
         <input
-          type="text"
-          placeholder="Search by name or company..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className={styles.searchInput}
+          className="input"
+          type="search"
+          placeholder="Search by name, company, headline or skill…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          aria-label="Search people"
         />
-
-        <div className={styles.filters}>
-          <input
-            type="number"
-            placeholder="Year"
-            value={filters.year}
-            onChange={(e) => setFilters({ ...filters, year: e.target.value })}
-            className={styles.filterInput}
-          />
-          <input
-            type="text"
-            placeholder="Company"
-            value={filters.company}
-            onChange={(e) =>
-              setFilters({ ...filters, company: e.target.value })
-            }
-            className={styles.filterInput}
-          />
-          <input
-            type="text"
-            placeholder="Department"
-            value={filters.department}
-            onChange={(e) =>
-              setFilters({ ...filters, department: e.target.value })
-            }
-            className={styles.filterInput}
-          />
-          <input
-            type="text"
-            placeholder="Location"
-            value={filters.location}
-            onChange={(e) =>
-              setFilters({ ...filters, location: e.target.value })
-            }
-            className={styles.filterInput}
-          />
-        </div>
-
-        <button type="submit" className={styles.searchBtn}>
-          Search
-        </button>
-      </form>
-
-      {loading ? (
-        <div className={styles.profilesGrid}>
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <CardSkeleton key={i} />
+        <select className="select" value={filters.role} onChange={setFilter("role")} aria-label="Role">
+          <option value="">All roles</option>
+          {["alumni", "student", "faculty"].map((r) => (
+            <option key={r} value={r}>{ROLE_LABELS[r]}</option>
           ))}
-        </div>
+        </select>
+        <select className="select" value={filters.department} onChange={setFilter("department")} aria-label="Department">
+          <option value="">All departments</option>
+          {data?.filters.departments.map((d) => <option key={d}>{d}</option>)}
+        </select>
+        <select className="select" value={filters.year} onChange={setFilter("year")} aria-label="Graduation year">
+          <option value="">Any year</option>
+          {data?.filters.years.map((y) => <option key={y}>{y}</option>)}
+        </select>
+        <label className="checkbox">
+          <input type="checkbox" checked={filters.mentors} onChange={setFilter("mentors")} /> Open to mentor
+        </label>
+      </div>
+
+      {error ? (
+        <ErrorState message={error} onRetry={() => { setError(""); setVersion((v) => v + 1); }} />
+      ) : !data ? (
+        <SkeletonList rows={8} />
+      ) : data.profiles.length === 0 ? (
+        <EmptyState title="No one matches these filters">Try a shorter search or clear a filter.</EmptyState>
       ) : (
-        <div className={styles.profilesGrid}>
-          {profiles.map((profile) => (
-            <div key={profile.user_id} className={styles.profileCard}>
-              <div className={styles.profileHeader}>
-                <ProfileAvatar name={profile.full_name} size="large" />
-                <div className={styles.profileInfo}>
-                  <h3>{profile.full_name}</h3>
-                  {profile.current_role && (
-                    <p className={styles.role}>{profile.current_role}</p>
-                  )}
-                </div>
-              </div>
-              {profile.current_company && (
-                <p className={styles.company}>🏢 {profile.current_company}</p>
-              )}
-              <div className={styles.details}>
-                {profile.graduation_year && (
-                  <span>🎓 Class of {profile.graduation_year}</span>
-                )}
-                {profile.department && <span>📚 {profile.department}</span>}
-                {profile.location && <span>📍 {profile.location}</span>}
-              </div>
-              {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
-              <div className={styles.cardActions}>
-                {profile.linkedin_url && (
-                  <a
-                    href={profile.linkedin_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.linkedinBtn}
-                  >
-                    LinkedIn →
-                  </a>
-                )}
-                {profile.github_url && (
-                  <a
-                    href={profile.github_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.githubBtn}
-                  >
-                    GitHub →
-                  </a>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        <>
+          <div className="card card-flush table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Role</th>
+                  <th scope="col">Currently</th>
+                  <th scope="col">Class</th>
+                  <th scope="col">Location</th>
+                  <th scope="col"><span className="sr-only">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.profiles.map((p) => (
+                  <tr key={p.id}>
+                    <td>
+                      <Link href={`/dashboard/people/${p.id}`} className="cell-person" style={{ color: "inherit" }}>
+                        <Avatar name={p.full_name} size="sm" />
+                        <span style={{ minWidth: 0 }}>
+                          <span className="truncate" style={{ display: "block", fontWeight: 500 }}>{p.full_name}</span>
+                          <span className="truncate muted" style={{ display: "block" }}>{p.headline || "No headline"}</span>
+                        </span>
+                      </Link>
+                    </td>
+                    <td>
+                      <span className="row" style={{ flexWrap: "nowrap" }}>
+                        {ROLE_LABELS[p.role]}
+                        {p.open_to_mentor ? <span className="badge badge-success">Mentor</span> : null}
+                      </span>
+                    </td>
+                    <td className="secondary">
+                      <span className="truncate" style={{ display: "block", maxWidth: 200 }}>
+                        {[p.current_role, p.current_company].filter(Boolean).join(", ") || "—"}
+                      </span>
+                    </td>
+                    <td className="num">{p.graduation_year ?? "—"}</td>
+                    <td className="secondary"><span className="truncate" style={{ display: "block", maxWidth: 160 }}>{p.location || "—"}</span></td>
+                    <td className="actions"><ConnectButton userId={p.id} status={p.connection_status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination page={page} totalPages={data.pagination.totalPages} total={data.pagination.total} onChange={setPage} />
+        </>
       )}
-
-      {!loading && profiles.length === 0 && (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>🔍</div>
-          <h3>No alumni found</h3>
-          <p>Try adjusting your search filters or check back later</p>
-        </div>
-      )}
-    </div>
+    </>
   );
 }

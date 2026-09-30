@@ -1,414 +1,186 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import styles from "./register.module.css";
-import Toast from "@/components/Toast";
-import PasswordStrength from "@/components/PasswordStrength";
-import { useToast } from "@/hooks/useToast";
+import { useRouter } from "next/navigation";
+import { api } from "@/lib/client";
+import { Field } from "@/components/ui";
+import Logo from "@/components/Logo";
+
+const currentYear = new Date().getFullYear();
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { toast, showToast, hideToast } = useToast();
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [colleges, setColleges] = useState([]);
+  const [form, setForm] = useState({
+    full_name: "",
     email: "",
     password: "",
-    confirmPassword: "",
-    fullName: "",
-    role: "",
-    graduationYear: "",
+    role: "student",
+    college_id: "",
+    graduation_year: String(currentYear + 1),
     department: "",
-    college: "",
   });
   const [errors, setErrors] = useState({});
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const colleges = [
-    { id: 1, name: "Demo University", domain: "demo.edu" },
-    { id: 2, name: "Tech Institute", domain: "tech.edu" },
-    { id: 3, name: "Engineering College", domain: "engineering.edu" },
-  ];
+  useEffect(() => {
+    api("/api/colleges")
+      .then(({ colleges }) => setColleges(colleges))
+      .catch(() => setError("Couldn't load colleges. Refresh to try again."));
+  }, []);
 
-  const departments = [
-    "Computer Science",
-    "Electronics",
-    "Mechanical",
-    "Civil",
-    "Chemical",
-    "Biotechnology",
-    "Information Technology",
-    "Business Administration",
-  ];
+  const college = colleges.find((c) => String(c.id) === form.college_id);
+  const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 30 }, (_, i) => currentYear - i);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    // Clear error when field is modified
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: null });
-    }
-  };
-
-  const validateStep1 = () => {
-    const newErrors = {};
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email";
-    }
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
-    }
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const validateStep2 = () => {
-    const newErrors = {};
-    if (!formData.fullName) {
-      newErrors.fullName = "Full name is required";
-    }
-    if (!formData.role) {
-      newErrors.role = "Please select your role";
-    }
-    if (!formData.college) {
-      newErrors.college = "Please select your college";
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleNext = () => {
-    if (step === 1 && validateStep1()) {
-      setStep(2);
-    }
-  };
-
-  const handleBack = () => {
-    setStep(1);
-  };
-
-  const handleSubmit = async (e) => {
+  async function onSubmit(e) {
     e.preventDefault();
-    if (!validateStep2()) return;
-
+    setErrors({});
+    setError("");
     setLoading(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      showToast("Account created successfully! Please sign in.", "success");
-      setTimeout(() => {
-        router.push("/login");
-      }, 1500);
-    }, 1500);
-  };
+    try {
+      await api("/api/auth/register", { method: "POST", body: form });
+      router.replace("/dashboard/profile?welcome=1");
+      router.refresh();
+    } catch (err) {
+      setErrors(err.details);
+      setError(err.message);
+      setLoading(false);
+    }
+  }
 
   return (
-    <>
-      {toast && (
-        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
-      )}
+    <main className="auth-page">
+      <div className="auth-card" style={{ maxWidth: 480 }}>
+        <Link href="/" className="auth-brand">
+          <Logo />
+        </Link>
+        <h1>Create your account</h1>
+        <p className="muted small" style={{ marginBottom: "var(--s6)" }}>
+          Join your college&apos;s alumni network. Faculty accounts are created by your college admin.
+        </p>
 
-      <div className={styles.container}>
-        <div className={styles.leftPanel}>
-          <div className={styles.brandContent}>
-            <Link href="/" className={styles.logo}>
-              🎓 AlumniConnect
-            </Link>
-            <h1 className={styles.headline}>Join the largest alumni network</h1>
-            <p className={styles.tagline}>
-              Connect with 50,000+ alumni across 100+ colleges. Build meaningful
-              relationships and accelerate your career.
-            </p>
-
-            <div className={styles.features}>
-              <div className={styles.featureItem}>
-                <span className={styles.featureIcon}>🤝</span>
-                <div>
-                  <h4>Network with Alumni</h4>
-                  <p>Connect with successful graduates from your college</p>
-                </div>
-              </div>
-              <div className={styles.featureItem}>
-                <span className={styles.featureIcon}>💼</span>
-                <div>
-                  <h4>Exclusive Job Board</h4>
-                  <p>Access opportunities shared by alumni at top companies</p>
-                </div>
-              </div>
-              <div className={styles.featureItem}>
-                <span className={styles.featureIcon}>🎯</span>
-                <div>
-                  <h4>Mentorship Program</h4>
-                  <p>Get guidance from experienced professionals</p>
-                </div>
-              </div>
+        <form className="stack" onSubmit={onSubmit} noValidate>
+          {error && (
+            <div className="alert alert-error" role="alert">
+              {error}
             </div>
-          </div>
-        </div>
+          )}
 
-        <div className={styles.rightPanel}>
-          <div className={styles.formContainer}>
-            <div className={styles.formHeader}>
-              <h2 className={styles.formTitle}>Create your account</h2>
-              <p className={styles.formSubtitle}>
-                Already have an account?{" "}
-                <Link href="/login" className={styles.loginLink}>
-                  Sign in
-                </Link>
-              </p>
-            </div>
-
-            <div className={styles.stepIndicator}>
-              <div
-                className={`${styles.step} ${step >= 1 ? styles.active : ""}`}
+          <div className="form-grid">
+            <Field label="I am a…" htmlFor="role" error={errors.role}>
+              <select id="role" className="select" value={form.role} onChange={set("role")}>
+                <option value="student">Current student</option>
+                <option value="alumni">Alumnus / alumna</option>
+              </select>
+            </Field>
+            <Field label="College" htmlFor="college" error={errors.college_id}>
+              <select
+                id="college"
+                className="select"
+                value={form.college_id}
+                onChange={set("college_id")}
+                aria-invalid={Boolean(errors.college_id)}
+                required
               >
-                <div className={styles.stepNumber}>1</div>
-                <span>Account</span>
-              </div>
-              <div className={styles.stepLine}></div>
-              <div
-                className={`${styles.step} ${step >= 2 ? styles.active : ""}`}
-              >
-                <div className={styles.stepNumber}>2</div>
-                <span>Profile</span>
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className={styles.form}>
-              {step === 1 && (
-                <div className={styles.stepContent}>
-                  <div className={styles.formGroup}>
-                    <label htmlFor="email">College Email</label>
-                    <input
-                      id="email"
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      placeholder="you@college.edu"
-                      className={errors.email ? styles.inputError : ""}
-                    />
-                    {errors.email && (
-                      <span className={styles.error}>{errors.email}</span>
-                    )}
-                  </div>
-
-                  <div className={styles.formGroup}>
-                    <label htmlFor="password">Password</label>
-                    <input
-                      id="password"
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="Create a strong password"
-                      className={errors.password ? styles.inputError : ""}
-                    />
-                    {errors.password && (
-                      <span className={styles.error}>{errors.password}</span>
-                    )}
-                    {formData.password && (
-                      <PasswordStrength password={formData.password} />
-                    )}
-                  </div>
-
-                  <div className={styles.formGroup}>
-                    <label htmlFor="confirmPassword">Confirm Password</label>
-                    <input
-                      id="confirmPassword"
-                      type="password"
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      placeholder="Confirm your password"
-                      className={
-                        errors.confirmPassword ? styles.inputError : ""
-                      }
-                    />
-                    {errors.confirmPassword && (
-                      <span className={styles.error}>
-                        {errors.confirmPassword}
-                      </span>
-                    )}
-                  </div>
-
-                  <button
-                    type="button"
-                    className={styles.nextBtn}
-                    onClick={handleNext}
-                  >
-                    Continue
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                  </button>
-                </div>
-              )}
-
-              {step === 2 && (
-                <div className={styles.stepContent}>
-                  <div className={styles.formGroup}>
-                    <label htmlFor="fullName">Full Name</label>
-                    <input
-                      id="fullName"
-                      type="text"
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleChange}
-                      placeholder="Enter your full name"
-                      className={errors.fullName ? styles.inputError : ""}
-                    />
-                    {errors.fullName && (
-                      <span className={styles.error}>{errors.fullName}</span>
-                    )}
-                  </div>
-
-                  <div className={styles.formGroup}>
-                    <label htmlFor="role">I am a</label>
-                    <div className={styles.roleOptions}>
-                      {["student", "alumni", "faculty"].map((role) => (
-                        <label
-                          key={role}
-                          className={`${styles.roleOption} ${
-                            formData.role === role ? styles.roleSelected : ""
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="role"
-                            value={role}
-                            checked={formData.role === role}
-                            onChange={handleChange}
-                          />
-                          <span className={styles.roleIcon}>
-                            {role === "student" && "🎓"}
-                            {role === "alumni" && "👔"}
-                            {role === "faculty" && "👨‍🏫"}
-                          </span>
-                          <span className={styles.roleLabel}>
-                            {role.charAt(0).toUpperCase() + role.slice(1)}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                    {errors.role && (
-                      <span className={styles.error}>{errors.role}</span>
-                    )}
-                  </div>
-
-                  <div className={styles.formGroup}>
-                    <label htmlFor="college">College</label>
-                    <select
-                      id="college"
-                      name="college"
-                      value={formData.college}
-                      onChange={handleChange}
-                      className={errors.college ? styles.inputError : ""}
-                    >
-                      <option value="">Select your college</option>
-                      {colleges.map((college) => (
-                        <option key={college.id} value={college.id}>
-                          {college.name}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.college && (
-                      <span className={styles.error}>{errors.college}</span>
-                    )}
-                  </div>
-
-                  <div className={styles.formRow}>
-                    <div className={styles.formGroup}>
-                      <label htmlFor="department">Department</label>
-                      <select
-                        id="department"
-                        name="department"
-                        value={formData.department}
-                        onChange={handleChange}
-                      >
-                        <option value="">Select department</option>
-                        {departments.map((dept) => (
-                          <option key={dept} value={dept}>
-                            {dept}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className={styles.formGroup}>
-                      <label htmlFor="graduationYear">
-                        {formData.role === "student"
-                          ? "Expected Graduation"
-                          : "Graduation Year"}
-                      </label>
-                      <select
-                        id="graduationYear"
-                        name="graduationYear"
-                        value={formData.graduationYear}
-                        onChange={handleChange}
-                      >
-                        <option value="">Select year</option>
-                        {years.map((year) => (
-                          <option key={year} value={year}>
-                            {year}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className={styles.buttonGroup}>
-                    <button
-                      type="button"
-                      className={styles.backBtn}
-                      onClick={handleBack}
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M7 8l-4 4m0 0l4 4m-4-4h18" />
-                      </svg>
-                      Back
-                    </button>
-                    <button
-                      type="submit"
-                      className={styles.submitBtn}
-                      disabled={loading}
-                    >
-                      {loading ? "Creating account..." : "Create Account"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </form>
-
-            <p className={styles.terms}>
-              By creating an account, you agree to our{" "}
-              <a href="#">Terms of Service</a> and{" "}
-              <a href="#">Privacy Policy</a>
-            </p>
+                <option value="">Select…</option>
+                {colleges.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
           </div>
-        </div>
+
+          <Field label="Full name" htmlFor="full_name" error={errors.full_name}>
+            <input
+              id="full_name"
+              className="input"
+              autoComplete="name"
+              value={form.full_name}
+              onChange={set("full_name")}
+              aria-invalid={Boolean(errors.full_name)}
+              required
+            />
+          </Field>
+
+          <Field
+            label="College email"
+            htmlFor="email"
+            error={errors.email}
+            hint={college ? `Must be an @${college.domain} address` : "Use your institutional email"}
+          >
+            <input
+              id="email"
+              className="input"
+              type="email"
+              autoComplete="email"
+              placeholder={college ? `you@${college.domain}` : "you@college.edu"}
+              value={form.email}
+              onChange={set("email")}
+              aria-invalid={Boolean(errors.email)}
+              required
+            />
+          </Field>
+
+          <Field
+            label="Password"
+            htmlFor="password"
+            error={errors.password}
+            hint="At least 8 characters, with a letter and a number"
+          >
+            <input
+              id="password"
+              className="input"
+              type="password"
+              autoComplete="new-password"
+              value={form.password}
+              onChange={set("password")}
+              aria-invalid={Boolean(errors.password)}
+              required
+            />
+          </Field>
+
+          <div className="form-grid">
+            <Field
+              label={form.role === "student" ? "Expected graduation" : "Graduation year"}
+              htmlFor="graduation_year"
+              error={errors.graduation_year}
+            >
+              <input
+                id="graduation_year"
+                className="input"
+                type="number"
+                min="1950"
+                max={currentYear + 6}
+                value={form.graduation_year}
+                onChange={set("graduation_year")}
+                aria-invalid={Boolean(errors.graduation_year)}
+                required
+              />
+            </Field>
+            <Field label="Department (optional)" htmlFor="department" error={errors.department}>
+              <input
+                id="department"
+                className="input"
+                placeholder="Computer Science"
+                value={form.department}
+                onChange={set("department")}
+              />
+            </Field>
+          </div>
+
+          <button className="btn btn-primary btn-block" disabled={loading}>
+            {loading ? "Creating account…" : "Create account"}
+          </button>
+        </form>
+
+        <p className="small muted" style={{ marginTop: "var(--s4)" }}>
+          Already have an account? <Link href="/login">Sign in</Link>
+        </p>
       </div>
-    </>
+    </main>
   );
 }

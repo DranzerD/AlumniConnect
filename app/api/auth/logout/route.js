@@ -1,19 +1,8 @@
-import { NextResponse } from "next/server";
-import { serialize } from "cookie";
+import { json } from "@/lib/http";
+import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 
 export async function POST() {
-  const response = NextResponse.json({ success: true });
-
-  response.headers.set(
-    "Set-Cookie",
-    serialize("token", "", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 0,
-      path: "/",
-    })
-  );
-
+  const response = json({ ok: true });
+  response.cookies.set(SESSION_COOKIE, "", sessionCookieOptions(0));
   return response;
 }

@@ -1,26 +1,32 @@
 "use client";
 
-import { useEffect } from "react";
-import styles from "./Toast.module.css";
+import { createContext, useCallback, useContext, useState } from "react";
 
-export default function Toast({ message, type = "success", onClose }) {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 4000);
+const ToastContext = createContext(() => {});
 
-    return () => clearTimeout(timer);
-  }, [onClose]);
+export function ToastProvider({ children }) {
+  const [toasts, setToasts] = useState([]);
+
+  const showToast = useCallback((message, type = "info") => {
+    const id = Math.random().toString(36).slice(2);
+    setToasts((current) => [...current, { id, message, type }]);
+    setTimeout(() => setToasts((current) => current.filter((t) => t.id !== id)), 3500);
+  }, []);
 
   return (
-    <div className={`${styles.toast} ${styles[type]}`}>
-      <div className={styles.icon}>
-        {type === "success" ? "✓" : type === "error" ? "✕" : "ℹ"}
+    <ToastContext.Provider value={showToast}>
+      {children}
+      <div className="toasts" role="status" aria-live="polite">
+        {toasts.map((t) => (
+          <div key={t.id} className={`toast toast-${t.type}`}>
+            {t.message}
+          </div>
+        ))}
       </div>
-      <p className={styles.message}>{message}</p>
-      <button onClick={onClose} className={styles.close}>
-        ✕
-      </button>
-    </div>
+    </ToastContext.Provider>
   );
+}
+
+export function useToast() {
+  return useContext(ToastContext);
 }

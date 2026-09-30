@@ -1,98 +1,80 @@
-import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/session";
-import { query } from "@/lib/db";
-import { hashPassword } from "@/lib/auth";
+import bcrypt from "bcryptjs";
+import { all, get, run, transaction } from "@/lib/db";
+import { handler, json, readJson, getPagination, HttpError } from "@/lib/http";
+import { requireRole } from "@/lib/session";
+import { validate, PASSWORD_RULE, assertStrongPassword } from "@/lib/validation";
 
-export async function POST(request) {
-  try {
-    const session = await requireAdmin();
-    const data = await request.json();
+const ROLES = ["student", "alumni", "faculty", "admin"];
 
-    const { email, password, role, full_name } = data;
+// GET /api/admin/users?q=&role=&status=active|inactive&page=
+export const GET = handler(async (request) => {
+  const admin = await requireRole("admin");
+  const { searchParams } = request.nextUrl;
+  const { page, limit, offset } = getPagination(searchParams, { defaultLimit: 15 });
+  const q = searchParams.get("q")?.trim();
+  const status = searchParams.get("status");
 
-    if (!email || !password || !role || !full_name) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
+  const params = {
+    college: admin.collegeId,
+    q: q ? `%${q.replace(/[\\%_]/g, "\\$&")}%` : null,
+    role: ROLES.includes(searchParams.get("role")) ? searchParams.get("role") : null,
+    active: status === "active" ? 1 : status === "inactive" ? 0 : null,
+  };
+  const where = `
+    FROM users u JOIN profiles p ON p.user_id = u.id
+    WHERE u.college_id = @college
+      AND (@q IS NULL OR p.full_name LIKE @q ESCAPE '\\' OR u.email LIKE @q ESCAPE '\\')
+      AND (@role IS NULL OR u.role = @role)
+      AND (@active IS NULL OR u.is_active = @active)`;
 
-    if (!["student", "alumni", "faculty", "admin"].includes(role)) {
-      return NextResponse.json({ error: "Invalid role" }, { status: 400 });
-    }
+  const { total } = get(`SELECT COUNT(*) AS total ${where}`, params);
+  const users = all(
+    `SELECT u.id, u.email, u.role, u.is_active, u.created_at, u.last_login_at,
+            p.full_name, p.graduation_year
+     ${where}
+     ORDER BY u.created_at DESC, u.id DESC
+     LIMIT @limit OFFSET @offset`,
+    { ...params, limit, offset },
+  );
 
-    const passwordHash = await hashPassword(password);
+  return json({
+    users,
+    pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+  });
+});
 
-    // Create user
-    const userResult = await query(
-      `INSERT INTO users (college_id, email, password_hash, role, must_reset_password)
-       VALUES ($1, $2, $3, $4, true)
-       RETURNING id`,
-      [session.collegeId, email, passwordHash, role]
-    );
+// POST — provision an account (e.g. faculty or another admin, who can't self-register).
+export const POST = handler(async (request) => {
+  const admin = await requireRole("admin");
+  const data = validate(await readJson(request), {
+    full_name: { type: "string", required: true, min: 2, max: 80, label: "full name" },
+    email: { type: "email", required: true },
+    role: { type: "enum", required: true, values: ROLES },
+    password: { ...PASSWORD_RULE, label: "temporary password" },
+  });
+  assertStrongPassword(data.password);
 
-    const userId = userResult.rows[0].id;
-
-    // Create profile
-    await query(
-      `INSERT INTO profiles (user_id, full_name)
-       VALUES ($1, $2)`,
-      [userId, full_name]
-    );
-
-    return NextResponse.json({ success: true, userId });
-  } catch (error) {
-    console.error("Create user error:", error);
-    if (error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (error.message.includes("Forbidden")) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-    if (error.code === "23505") {
-      return NextResponse.json(
-        { error: "User with this email already exists" },
-        { status: 409 }
-      );
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+  const { domain } = get("SELECT domain FROM colleges WHERE id = ?", admin.collegeId);
+  const emailDomain = data.email.split("@")[1];
+  if (emailDomain !== domain && !emailDomain.endsWith(`.${domain}`)) {
+    throw new HttpError(422, `Email must be an @${domain} address`, { email: `Email must be an @${domain} address` });
   }
-}
-
-export async function GET() {
-  try {
-    const session = await requireAdmin();
-
-    const result = await query(
-      `SELECT 
-        u.id,
-        u.email,
-        u.role,
-        u.is_active,
-        u.created_at,
-        p.full_name
-      FROM users u
-      LEFT JOIN profiles p ON u.id = p.user_id
-      WHERE u.college_id = $1
-      ORDER BY u.created_at DESC`,
-      [session.collegeId]
-    );
-
-    return NextResponse.json({ users: result.rows });
-  } catch (error) {
-    console.error("Get users error:", error);
-    if (error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (error.message.includes("Forbidden")) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+  if (get("SELECT 1 FROM users WHERE email = ?", data.email)) {
+    throw new HttpError(409, "An account with this email already exists", { email: "An account with this email already exists" });
   }
-}
+
+  const hash = await bcrypt.hash(data.password, 10);
+  const id = transaction(() => {
+    const { lastInsertRowid } = run(
+      "INSERT INTO users (college_id, email, password_hash, role) VALUES (?, ?, ?, ?)",
+      admin.collegeId,
+      data.email,
+      hash,
+      data.role,
+    );
+    run("INSERT INTO profiles (user_id, full_name) VALUES (?, ?)", lastInsertRowid, data.full_name);
+    return Number(lastInsertRowid);
+  });
+
+  return json({ user: { id, email: data.email, role: data.role } }, { status: 201 });
+});

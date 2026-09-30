@@ -1,225 +1,88 @@
-"use server";
+import { all, get, run } from "@/lib/db";
+import { handler, json, readJson, HttpError } from "@/lib/http";
+import { requireUser } from "@/lib/session";
+import { validate } from "@/lib/validation";
+import { getColleague, notify, CAN_MENTOR } from "@/lib/domain";
 
-import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
-import db from "@/lib/db";
+const REQUEST_COLUMNS = `
+  r.id, r.topic, r.message, r.status, r.created_at, r.responded_at,
+  u.id AS user_id, p.full_name, p.headline`;
 
-// GET mentorship programs and mentors
-export async function GET(request) {
-  try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+export const GET = handler(async () => {
+  const me = await requireUser();
 
-    const { searchParams } = new URL(request.url);
-    const type = searchParams.get("type"); // 'mentors', 'programs', 'my-connections'
-    const expertise = searchParams.get("expertise");
-    const availability = searchParams.get("availability");
-    const page = parseInt(searchParams.get("page")) || 1;
-    const limit = parseInt(searchParams.get("limit")) || 12;
-    const offset = (page - 1) * limit;
+  const mentors = all(
+    `SELECT u.id, u.role, p.full_name, p.headline, p.current_company, p.current_role,
+            p.graduation_year, p.skills, p.bio,
+            (SELECT r.status FROM mentorship_requests r
+              WHERE r.mentor_id = u.id AND r.mentee_id = @me AND r.status IN ('pending', 'accepted')
+              ORDER BY r.id DESC LIMIT 1) AS request_status
+       FROM users u JOIN profiles p ON p.user_id = u.id
+      WHERE u.college_id = @college AND u.is_active = 1 AND p.open_to_mentor = 1 AND u.id <> @me
+      ORDER BY p.full_name COLLATE NOCASE`,
+    { me: me.id, college: me.collegeId },
+  );
 
-    if (type === "mentors") {
-      // Get available mentors
-      let whereClause = "WHERE m.is_available = 1";
-      const params = [];
+  // Requests where I'm the mentor / where I'm the mentee.
+  const incoming = all(
+    `SELECT ${REQUEST_COLUMNS}
+       FROM mentorship_requests r JOIN users u ON u.id = r.mentee_id JOIN profiles p ON p.user_id = u.id
+      WHERE r.mentor_id = ?
+      ORDER BY CASE r.status WHEN 'pending' THEN 0 WHEN 'accepted' THEN 1 ELSE 2 END, r.created_at DESC`,
+    me.id,
+  );
+  const outgoing = all(
+    `SELECT ${REQUEST_COLUMNS}
+       FROM mentorship_requests r JOIN users u ON u.id = r.mentor_id JOIN profiles p ON p.user_id = u.id
+      WHERE r.mentee_id = ?
+      ORDER BY CASE r.status WHEN 'pending' THEN 0 WHEN 'accepted' THEN 1 ELSE 2 END, r.created_at DESC`,
+    me.id,
+  );
 
-      if (expertise) {
-        whereClause += " AND m.expertise LIKE ?";
-        params.push(`%${expertise}%`);
-      }
+  const { open_to_mentor } = get("SELECT open_to_mentor FROM profiles WHERE user_id = ?", me.id);
+  return json({
+    mentors,
+    incoming,
+    outgoing,
+    canMentor: CAN_MENTOR.includes(me.role),
+    isMentor: Boolean(open_to_mentor),
+  });
+});
 
-      const mentors = await db.all(
-        `
-        SELECT 
-          m.*,
-          u.name, u.email,
-          p.avatar, p.title, p.company, p.bio, p.linkedin_url,
-          (SELECT COUNT(*) FROM mentorship_connections WHERE mentor_id = m.id AND status = 'active') as active_mentees,
-          (SELECT AVG(rating) FROM mentorship_reviews WHERE mentor_id = m.id) as avg_rating,
-          (SELECT COUNT(*) FROM mentorship_reviews WHERE mentor_id = m.id) as review_count
-        FROM mentors m
-        JOIN users u ON m.user_id = u.id
-        LEFT JOIN profiles p ON u.id = p.user_id
-        ${whereClause}
-        ORDER BY avg_rating DESC NULLS LAST, active_mentees DESC
-        LIMIT ? OFFSET ?
-      `,
-        [...params, limit, offset],
-      );
+// POST { mentor_id, topic, message }
+export const POST = handler(async (request) => {
+  const me = await requireUser();
+  const data = validate(await readJson(request), {
+    mentor_id: { type: "int", required: true, min: 1, label: "mentor" },
+    topic: { type: "string", required: true, min: 3, max: 100 },
+    message: { type: "string", required: true, min: 10, max: 1000 },
+  });
 
-      const countResult = await db.get(
-        `SELECT COUNT(*) as total FROM mentors m ${whereClause}`,
-        params,
-      );
+  if (data.mentor_id === me.id) throw new HttpError(422, "You can't mentor yourself");
+  const mentor = getColleague(me, data.mentor_id);
+  if (!mentor.openToMentor) throw new HttpError(422, `${mentor.fullName} isn't accepting mentees right now`);
 
-      return NextResponse.json({
-        mentors,
-        pagination: {
-          page,
-          limit,
-          total: countResult?.total || 0,
-          totalPages: Math.ceil((countResult?.total || 0) / limit),
-        },
-      });
-    }
+  const active = get(
+    `SELECT 1 FROM mentorship_requests
+      WHERE mentee_id = ? AND mentor_id = ? AND status IN ('pending', 'accepted')`,
+    me.id,
+    mentor.id,
+  );
+  if (active) throw new HttpError(409, "You already have an active request with this mentor");
 
-    if (type === "programs") {
-      // Get mentorship programs
-      const programs = await db.all(
-        `
-        SELECT 
-          mp.*,
-          u.name as coordinator_name,
-          (SELECT COUNT(*) FROM mentorship_program_enrollments WHERE program_id = mp.id) as enrollment_count
-        FROM mentorship_programs mp
-        LEFT JOIN users u ON mp.coordinator_id = u.id
-        WHERE mp.status = 'active'
-        ORDER BY mp.start_date ASC
-        LIMIT ? OFFSET ?
-      `,
-        [limit, offset],
-      );
+  const { lastInsertRowid } = run(
+    "INSERT INTO mentorship_requests (mentee_id, mentor_id, topic, message) VALUES (?, ?, ?, ?)",
+    me.id,
+    mentor.id,
+    data.topic,
+    data.message,
+  );
+  notify(mentor.id, {
+    type: "mentorship_request",
+    title: `${me.fullName} requested mentorship`,
+    body: data.topic,
+    link: "/dashboard/mentorship",
+  });
 
-      return NextResponse.json({ programs });
-    }
-
-    if (type === "my-connections") {
-      // Get user's mentorship connections (as mentor or mentee)
-      const asMentor = await db.all(
-        `
-        SELECT 
-          mc.*,
-          u.name as mentee_name, u.email as mentee_email,
-          p.avatar as mentee_avatar, p.title as mentee_title, p.company as mentee_company
-        FROM mentorship_connections mc
-        JOIN users u ON mc.mentee_id = u.id
-        LEFT JOIN profiles p ON u.id = p.user_id
-        JOIN mentors m ON mc.mentor_id = m.id
-        WHERE m.user_id = ?
-        ORDER BY mc.created_at DESC
-      `,
-        [session.userId],
-      );
-
-      const asMentee = await db.all(
-        `
-        SELECT 
-          mc.*,
-          u.name as mentor_name, u.email as mentor_email,
-          p.avatar as mentor_avatar, p.title as mentor_title, p.company as mentor_company,
-          m.expertise
-        FROM mentorship_connections mc
-        JOIN mentors m ON mc.mentor_id = m.id
-        JOIN users u ON m.user_id = u.id
-        LEFT JOIN profiles p ON u.id = p.user_id
-        WHERE mc.mentee_id = ?
-        ORDER BY mc.created_at DESC
-      `,
-        [session.userId],
-      );
-
-      return NextResponse.json({
-        asMentor,
-        asMentee,
-      });
-    }
-
-    // Default: return overview
-    const stats = await db.get(`
-      SELECT
-        (SELECT COUNT(*) FROM mentors WHERE is_available = 1) as available_mentors,
-        (SELECT COUNT(*) FROM mentorship_connections WHERE status = 'active') as active_connections,
-        (SELECT COUNT(*) FROM mentorship_programs WHERE status = 'active') as active_programs
-    `);
-
-    return NextResponse.json({ stats });
-  } catch (error) {
-    console.error("Mentorship fetch error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch mentorship data" },
-      { status: 500 },
-    );
-  }
-}
-
-// POST create mentorship request
-export async function POST(request) {
-  try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { mentor_id, message, goals, preferred_frequency } = body;
-
-    if (!mentor_id) {
-      return NextResponse.json(
-        { error: "Mentor ID is required" },
-        { status: 400 },
-      );
-    }
-
-    // Check if mentor exists and is available
-    const mentor = await db.get(
-      "SELECT * FROM mentors WHERE id = ? AND is_available = 1",
-      [mentor_id],
-    );
-
-    if (!mentor) {
-      return NextResponse.json(
-        { error: "Mentor not found or unavailable" },
-        { status: 404 },
-      );
-    }
-
-    // Check if user is not the mentor
-    if (mentor.user_id === session.userId) {
-      return NextResponse.json(
-        { error: "You cannot request mentorship from yourself" },
-        { status: 400 },
-      );
-    }
-
-    // Check for existing pending/active connection
-    const existing = await db.get(
-      `
-      SELECT * FROM mentorship_connections 
-      WHERE mentor_id = ? AND mentee_id = ? AND status IN ('pending', 'active')
-    `,
-      [mentor_id, session.userId],
-    );
-
-    if (existing) {
-      return NextResponse.json(
-        {
-          error:
-            "You already have a pending or active connection with this mentor",
-        },
-        { status: 400 },
-      );
-    }
-
-    // Create mentorship request
-    await db.run(
-      `
-      INSERT INTO mentorship_connections (
-        mentor_id, mentee_id, message, goals, preferred_frequency, status, created_at
-      ) VALUES (?, ?, ?, ?, ?, 'pending', datetime('now'))
-    `,
-      [mentor_id, session.userId, message, goals, preferred_frequency],
-    );
-
-    return NextResponse.json({
-      message: "Mentorship request sent successfully",
-    });
-  } catch (error) {
-    console.error("Mentorship request error:", error);
-    return NextResponse.json(
-      { error: "Failed to send mentorship request" },
-      { status: 500 },
-    );
-  }
-}
+  return json({ request: { id: Number(lastInsertRowid), status: "pending" } }, { status: 201 });
+});

@@ -1,146 +1,71 @@
-"use server";
+import { all, get, run } from "@/lib/db";
+import { handler, json, readJson, HttpError } from "@/lib/http";
+import { requireUser } from "@/lib/session";
+import { validate } from "@/lib/validation";
+import { CAN_CREATE_EVENTS, EVENT_TYPES } from "@/lib/domain";
 
-import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
-import db from "@/lib/db";
+const EVENT_COLUMNS = `
+  e.*, p.full_name AS organizer_name,
+  (SELECT COUNT(*) FROM event_rsvps r WHERE r.event_id = e.id) AS rsvp_count,
+  EXISTS (SELECT 1 FROM event_rsvps r WHERE r.event_id = e.id AND r.user_id = @me) AS is_going,
+  (e.organizer_id = @me OR @isAdmin) AS can_manage`;
 
-// GET all events with filtering and pagination
-export async function GET(request) {
-  try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+// GET /api/events?when=upcoming|past|going
+export const GET = handler(async (request) => {
+  const me = await requireUser();
+  const when = request.nextUrl.searchParams.get("when") ?? "upcoming";
 
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page")) || 1;
-    const limit = parseInt(searchParams.get("limit")) || 10;
-    const type = searchParams.get("type");
-    const status = searchParams.get("status");
-    const search = searchParams.get("search");
+  const filter = {
+    upcoming: "e.starts_at >= @now ORDER BY e.starts_at ASC",
+    past: "e.starts_at < @now ORDER BY e.starts_at DESC",
+    going: `e.starts_at >= @now AND EXISTS (SELECT 1 FROM event_rsvps r WHERE r.event_id = e.id AND r.user_id = @me)
+            ORDER BY e.starts_at ASC`,
+  }[when];
+  if (!filter) throw new HttpError(400, "Invalid filter");
 
-    const offset = (page - 1) * limit;
+  const events = all(
+    `SELECT ${EVENT_COLUMNS}
+       FROM events e JOIN profiles p ON p.user_id = e.organizer_id
+      WHERE e.college_id = @college AND ${filter}
+      LIMIT 100`,
+    { me: me.id, college: me.collegeId, now: new Date().toISOString(), isAdmin: me.role === "admin" ? 1 : 0 },
+  );
 
-    let whereClause = "WHERE 1=1";
-    const params = [];
+  return json({ events, canCreate: CAN_CREATE_EVENTS.includes(me.role) });
+});
 
-    if (type) {
-      whereClause += " AND type = ?";
-      params.push(type);
-    }
-
-    if (status) {
-      whereClause += " AND status = ?";
-      params.push(status);
-    }
-
-    if (search) {
-      whereClause += " AND (title LIKE ? OR description LIKE ?)";
-      params.push(`%${search}%`, `%${search}%`);
-    }
-
-    // Get total count
-    const countQuery = `SELECT COUNT(*) as total FROM events ${whereClause}`;
-    const countResult = await db.get(countQuery, params);
-    const total = countResult?.total || 0;
-
-    // Get events with pagination
-    const eventsQuery = `
-      SELECT 
-        e.*,
-        u.name as organizer_name,
-        u.email as organizer_email,
-        (SELECT COUNT(*) FROM event_attendees WHERE event_id = e.id) as attendee_count
-      FROM events e
-      LEFT JOIN users u ON e.organizer_id = u.id
-      ${whereClause}
-      ORDER BY e.event_date ASC
-      LIMIT ? OFFSET ?
-    `;
-
-    const events = await db.all(eventsQuery, [...params, limit, offset]);
-
-    return NextResponse.json({
-      events: events || [],
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-    });
-  } catch (error) {
-    console.error("Events fetch error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch events" },
-      { status: 500 },
-    );
+export const POST = handler(async (request) => {
+  const me = await requireUser();
+  if (!CAN_CREATE_EVENTS.includes(me.role)) {
+    throw new HttpError(403, "Only alumni, faculty and admins can create events");
   }
-}
 
-// POST create new event
-export async function POST(request) {
-  try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const {
-      title,
-      description,
-      type,
-      event_date,
-      start_time,
-      end_time,
-      location,
-      virtual_link,
-      max_attendees,
-      registration_deadline,
-      image_url,
-    } = body;
-
-    // Validation
-    if (!title || !description || !type || !event_date) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 },
-      );
-    }
-
-    const insertQuery = `
-      INSERT INTO events (
-        title, description, type, event_date, start_time, end_time,
-        location, virtual_link, max_attendees, registration_deadline,
-        image_url, organizer_id, status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'upcoming', datetime('now'))
-    `;
-
-    const result = await db.run(insertQuery, [
-      title,
-      description,
-      type,
-      event_date,
-      start_time,
-      end_time,
-      location,
-      virtual_link,
-      max_attendees,
-      registration_deadline,
-      image_url,
-      session.userId,
-    ]);
-
-    return NextResponse.json({
-      message: "Event created successfully",
-      eventId: result.lastID,
-    });
-  } catch (error) {
-    console.error("Event creation error:", error);
-    return NextResponse.json(
-      { error: "Failed to create event" },
-      { status: 500 },
-    );
+  const data = validate(await readJson(request), {
+    title: { type: "string", required: true, min: 3, max: 120 },
+    description: { type: "string", required: true, min: 10, max: 3000 },
+    event_type: { type: "enum", required: true, values: EVENT_TYPES, label: "event type" },
+    starts_at: { type: "datetime", required: true, label: "start time" },
+    location: { type: "string", required: true, max: 160 },
+    is_virtual: { type: "bool" },
+    capacity: { type: "int", min: 1, max: 10000 },
+  });
+  if (data.starts_at <= new Date().toISOString()) {
+    throw new HttpError(422, "Start time must be in the future", { starts_at: "Start time must be in the future" });
   }
-}
+
+  const { lastInsertRowid } = run(
+    `INSERT INTO events (college_id, organizer_id, title, description, event_type, starts_at, location, is_virtual, capacity)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    me.collegeId,
+    me.id,
+    data.title,
+    data.description,
+    data.event_type,
+    data.starts_at,
+    data.location,
+    data.is_virtual ? 1 : 0,
+    data.capacity ?? null,
+  );
+
+  return json({ event: get("SELECT * FROM events WHERE id = ?", lastInsertRowid) }, { status: 201 });
+});
