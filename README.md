@@ -53,6 +53,12 @@ npm start
 | `npm run db:reset` | Deletes the database and re-seeds demo data. Run this after pulling schema changes. |
 | `npm run lint`     | Runs ESLint                                   |
 
+## Deployment
+
+The repo includes a [Render](https://render.com) blueprint (`render.yaml`). In Render choose **New → Blueprint**, select this repository and deploy. A random `JWT_SECRET` is generated automatically.
+
+On Render's free plan the service sleeps when idle (the first request takes 30–60 seconds) and the disk is temporary, so the database is recreated with fresh demo data on every restart. For persistent data, attach a Render disk and set `DATABASE_PATH` to a file on it.
+
 ## Project structure
 
 ```

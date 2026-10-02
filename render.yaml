@@ -1,0 +1,16 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# Free plan note: the instance sleeps when idle and its disk is ephemeral, so the
+# SQLite database is recreated with fresh demo data after every restart or deploy.
+services:
+  - type: web
+    name: alumniconnect
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /login
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: JWT_SECRET
+        generateValue: true
