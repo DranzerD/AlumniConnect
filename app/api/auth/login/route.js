@@ -18,7 +18,9 @@ export const POST = handler(async (request) => {
   rateLimit(`login:${clientIp(request)}:${email}`, { limit: 10, windowMs: 15 * 60 * 1000 });
 
   const user = get(
-    "SELECT id, college_id, password_hash, role, is_active FROM users WHERE email = ?",
+    `SELECT u.id, u.college_id, u.password_hash, u.role, u.is_active, c.is_active AS college_active
+       FROM users u LEFT JOIN colleges c ON c.id = u.college_id
+      WHERE u.email = ?`,
     email,
   );
   const valid = await bcrypt.compare(password, user?.password_hash ?? DUMMY_HASH);
@@ -26,11 +28,17 @@ export const POST = handler(async (request) => {
   if (!user.is_active) {
     throw new HttpError(403, "This account has been deactivated. Contact your college admin.");
   }
+  if (user.role !== "superadmin" && !user.college_active) {
+    throw new HttpError(403, "Your college's network is currently disabled.");
+  }
 
   run("UPDATE users SET last_login_at = datetime('now') WHERE id = ?", user.id);
 
   const token = await signSession({ id: user.id, role: user.role, collegeId: user.college_id });
-  const response = json({ user: { id: user.id, role: user.role } });
+  const response = json({
+    user: { id: user.id, role: user.role },
+    redirect: user.role === "superadmin" ? "/dashboard/platform" : "/dashboard",
+  });
   response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions());
   return response;
 });

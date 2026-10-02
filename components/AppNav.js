@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Bell, Briefcase, CalendarDays, Compass, Home, LogOut, Menu, MessageSquare, Settings, Shield, Users, UserPlus, X,
+  Bell, Briefcase, Building2, CalendarDays, Compass, Home, LogOut, Menu, MessageSquare, Settings, Shield, Users, UserPlus, X,
 } from "lucide-react";
 import Avatar from "./Avatar";
 import Logo from "./Logo";
@@ -22,6 +22,7 @@ const LINKS = [
   { href: "/dashboard/notifications", label: "Notifications", icon: Bell, badge: "notifications" },
 ];
 const ADMIN_LINK = { href: "/dashboard/admin", label: "Admin", icon: Shield };
+const PLATFORM_LINKS = [{ href: "/dashboard/platform", label: "Colleges", icon: Building2 }];
 const POLL_MS = 20_000;
 
 export default function AppNav({ user }) {
@@ -31,7 +32,10 @@ export default function AppNav({ user }) {
   const [counts, setCounts] = useState({});
 
   // Badge counts refresh on navigation and on an interval.
+  const isPlatformAdmin = user.role === "superadmin";
+
   useEffect(() => {
+    if (isPlatformAdmin) return; // badge counts are college features
     let cancelled = false;
     const load = () =>
       fetch("/api/summary", { cache: "no-store" })
@@ -44,7 +48,7 @@ export default function AppNav({ user }) {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [pathname]);
+  }, [pathname, isPlatformAdmin]);
 
   useEffect(() => setOpen(false), [pathname]);
 
@@ -54,13 +58,13 @@ export default function AppNav({ user }) {
     router.refresh();
   }
 
-  const links = user.role === "admin" ? [...LINKS, ADMIN_LINK] : LINKS;
+  const links = isPlatformAdmin ? PLATFORM_LINKS : user.role === "admin" ? [...LINKS, ADMIN_LINK] : LINKS;
   const isActive = (link) => (link.exact ? pathname === link.href : pathname.startsWith(link.href));
 
   return (
     <aside className={styles.sidebar}>
       <div className={styles.top}>
-        <Link href="/dashboard" className={styles.brand}>
+        <Link href={isPlatformAdmin ? "/dashboard/platform" : "/dashboard"} className={styles.brand}>
           <Logo />
         </Link>
         <button className={`btn btn-ghost ${styles.menuButton}`} onClick={() => setOpen((o) => !o)}
@@ -70,7 +74,7 @@ export default function AppNav({ user }) {
       </div>
 
       <div className={`${styles.body} ${open ? styles.open : ""}`}>
-        <p className={`${styles.college} truncate`} title={user.collegeName}>{user.collegeName}</p>
+        <p className={`${styles.college} truncate`} title={user.collegeName ?? ""}>{user.collegeName ?? "Platform administration"}</p>
         <nav className={styles.nav} aria-label="Main">
           {links.map((link) => {
             const Icon = link.icon;
@@ -93,7 +97,7 @@ export default function AppNav({ user }) {
         </nav>
 
         <div className={styles.user}>
-          <Link href="/dashboard/profile" className={styles.userLink}>
+          <Link href={isPlatformAdmin ? "/dashboard/settings" : "/dashboard/profile"} className={styles.userLink}>
             <Avatar name={user.fullName} size="sm" />
             <span className={styles.userText}>
               <span className="truncate">{user.fullName}</span>

@@ -7,7 +7,7 @@ Built with **Next.js 15 (App Router)**, **React 19** and **SQLite** (`better-sql
 ## Features
 
 - **Auth:** registration with a college-email domain check, bcrypt password hashing, JWT sessions in httpOnly cookies, login rate limiting, and password change.
-- **Roles:** student, alumni, faculty and admin, each with different permissions.
+- **Roles:** student, alumni, faculty, college admin and platform admin, each with different permissions.
 - **Multi-tenant:** every query is scoped to the user's college.
 - **Directory:** search and filter by role, department, graduation year and mentor availability, with pagination.
 - **Profiles:** editable profile with a privacy toggle. Email addresses are shown only to your connections.
@@ -17,7 +17,8 @@ Built with **Next.js 15 (App Router)**, **React 19** and **SQLite** (`better-sql
 - **Events:** create an event, RSVP, and optionally cap attendance. The capacity check runs inside a database transaction so an event can't be overbooked. Cancelling an event notifies everyone who RSVP'd.
 - **Mentorship:** request a mentor. Requests move through pending → accepted/declined → completed.
 - **Notifications:** generated when someone sends or accepts a connection request, when a mentorship request changes status, and when an event is cancelled.
-- **Admin dashboard:** community stats, user search, activating and deactivating accounts (a deactivated user is signed out immediately), role changes, and creating faculty accounts.
+- **College admin dashboard:** community stats, user search, activating and deactivating accounts (a deactivated user is signed out immediately), role changes, and creating faculty accounts.
+- **Platform admin:** a level above the colleges. Add a college and its email domain, rename it, deactivate or reactivate it (members are signed out and data is kept), appoint college admins, and see platform-wide stats.
 
 ## Getting started
 
@@ -34,7 +35,8 @@ Open http://localhost:3000 and click one of the demo accounts on the login page.
 | ------- | ----------------------------- |
 | Student | emily.davis@northwood.edu     |
 | Alumni  | sarah.johnson@northwood.edu   |
-| Admin   | admin@northwood.edu           |
+| College admin  | admin@northwood.edu         |
+| Platform admin | platform@alumniconnect.dev  |
 
 ### Production build
 
@@ -48,7 +50,7 @@ npm start
 
 | Command            | What it does                                  |
 | ------------------ | --------------------------------------------- |
-| `npm run db:reset` | Deletes the database and re-seeds demo data   |
+| `npm run db:reset` | Deletes the database and re-seeds demo data. Run this after pulling schema changes. |
 | `npm run lint`     | Runs ESLint                                   |
 
 ## Project structure
@@ -56,7 +58,7 @@ npm start
 ```
 app/
   api/            REST API route handlers (auth, profiles, connections, messages,
-                  jobs, events, mentorship, notifications, admin)
+                  jobs, events, mentorship, notifications, admin, platform)
   dashboard/      Signed-in pages
   login/ register/
 components/       Shared UI (nav, modal, toast, avatar, …)

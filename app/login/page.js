@@ -11,6 +11,7 @@ const DEMO_ACCOUNTS = [
   { label: "Student", email: "emily.davis@northwood.edu" },
   { label: "Alumni / mentor", email: "sarah.johnson@northwood.edu" },
   { label: "College admin", email: "admin@northwood.edu" },
+  { label: "Platform admin", email: "platform@alumniconnect.dev" },
 ];
 const DEMO_PASSWORD = "Password123!";
 
@@ -31,8 +32,8 @@ function LoginForm() {
     setError("");
     setLoading(true);
     try {
-      await api("/api/auth/login", { method: "POST", body: credentials });
-      router.replace(next);
+      const { redirect } = await api("/api/auth/login", { method: "POST", body: credentials });
+      router.replace(redirect === "/dashboard" ? next : redirect);
       router.refresh();
     } catch (err) {
       setError(err.message);

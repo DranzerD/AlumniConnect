@@ -22,7 +22,7 @@ export const POST = handler(async (request) => {
   });
   assertStrongPassword(data.password);
 
-  const college = get("SELECT id, domain FROM colleges WHERE id = ?", data.college_id);
+  const college = get("SELECT id, domain FROM colleges WHERE id = ? AND is_active = 1", data.college_id);
   if (!college) {
     throw new HttpError(422, "Select a valid college", { college_id: "Select a valid college" });
   }

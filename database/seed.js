@@ -39,8 +39,12 @@ function seed(db) {
   const run = db.transaction(() => {
     const northwood = insertCollege.run("Northwood University", "northwood.edu").lastInsertRowid;
     const lakeside = insertCollege.run("Lakeside Institute of Technology", "lakeside.edu").lastInsertRowid;
+    // Onboarded but not yet live: shows the deactivated state on the platform page.
+    db.prepare("INSERT INTO colleges (name, domain, is_active) VALUES (?, ?, 0)").run("Riverside College", "riverside.edu");
 
     const people = [
+      // Platform administrator (not tied to any college)
+      { key: "platform", college: null, email: "platform@alumniconnect.dev", role: "superadmin", full_name: "Platform Admin", headline: "AlumniConnect operations" },
       // Northwood University
       { key: "admin", college: northwood, email: "admin@northwood.edu", role: "admin", full_name: "Anita Rao", headline: "Alumni Relations Office", current_company: "Northwood University", current_role: "Alumni Relations Manager", location: "Boston, MA", department: "Administration" },
       { key: "iyer", college: northwood, email: "meera.iyer@northwood.edu", role: "faculty", full_name: "Dr. Meera Iyer", headline: "Associate Professor, Distributed Systems", degree: "Ph.D. Computer Science", department: "Computer Science", current_company: "Northwood University", current_role: "Associate Professor", location: "Boston, MA", bio: "I teach operating systems and distributed systems, and run the Systems Lab. Always happy to talk research with curious students.", skills: "Distributed Systems, Operating Systems, Research", mentor: 1 },
@@ -81,7 +85,7 @@ function seed(db) {
         location: p.location ?? null,
         bio: p.bio ?? null,
         skills: p.skills ?? null,
-        linkedin_url: p.role === "admin" ? null : `https://www.linkedin.com/in/${p.email.split("@")[0].replace(".", "-")}`,
+        linkedin_url: p.role === "admin" || p.role === "superadmin" ? null : `https://www.linkedin.com/in/${p.email.split("@")[0].replace(".", "-")}`,
         open_to_mentor: p.mentor ? 1 : 0,
       });
     });

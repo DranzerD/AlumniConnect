@@ -22,6 +22,15 @@ function openDatabase(dbPath = resolveDbPath()) {
   db.pragma("foreign_keys = ON");
   db.pragma("busy_timeout = 5000");
 
+  // Databases created before platform administration was added lack
+  // colleges.is_active and can't be migrated in place (SQLite can't alter a
+  // CHECK constraint). They only ever hold demo data, so ask for a reset.
+  const hasColleges = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'colleges'").get();
+  if (hasColleges && !db.prepare("PRAGMA table_info(colleges)").all().some((c) => c.name === "is_active")) {
+    db.close();
+    throw new Error("Database schema is out of date. Run `npm run db:reset` to recreate it.");
+  }
+
   const schema = fs.readFileSync(
     path.join(process.cwd(), "database", "schema.sql"),
     "utf8",

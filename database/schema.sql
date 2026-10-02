@@ -4,19 +4,21 @@
 CREATE TABLE IF NOT EXISTS colleges (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   name        TEXT    NOT NULL,
-  domain      TEXT    NOT NULL UNIQUE,
+  domain      TEXT    NOT NULL UNIQUE COLLATE NOCASE,
+  is_active   INTEGER NOT NULL DEFAULT 1, -- deactivated colleges can't sign in
   created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS users (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
-  college_id     INTEGER NOT NULL REFERENCES colleges(id) ON DELETE CASCADE,
+  college_id     INTEGER REFERENCES colleges(id) ON DELETE CASCADE, -- NULL only for platform admins
   email          TEXT    NOT NULL UNIQUE COLLATE NOCASE,
   password_hash  TEXT    NOT NULL,
-  role           TEXT    NOT NULL CHECK (role IN ('student', 'alumni', 'faculty', 'admin')),
+  role           TEXT    NOT NULL CHECK (role IN ('student', 'alumni', 'faculty', 'admin', 'superadmin')),
   is_active      INTEGER NOT NULL DEFAULT 1,
   created_at     TEXT    NOT NULL DEFAULT (datetime('now')),
-  last_login_at  TEXT
+  last_login_at  TEXT,
+  CHECK ((role = 'superadmin') = (college_id IS NULL))
 );
 CREATE INDEX IF NOT EXISTS idx_users_college_role ON users(college_id, role);
 

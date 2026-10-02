@@ -15,6 +15,7 @@ export async function middleware(request) {
   const isApi = pathname.startsWith("/api/");
   const isProtectedPage = pathname.startsWith("/dashboard");
   const isAdmin = pathname.startsWith("/dashboard/admin") || pathname.startsWith("/api/admin");
+  const isPlatform = pathname.startsWith("/dashboard/platform") || pathname.startsWith("/api/platform");
 
   if (isApi && !PUBLIC_API.includes(pathname) && !session) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
@@ -26,6 +27,23 @@ export async function middleware(request) {
     const response = NextResponse.redirect(loginUrl);
     response.cookies.delete(SESSION_COOKIE); // clear expired/invalid tokens
     return response;
+  }
+
+  if (isPlatform && session?.role !== "superadmin") {
+    return isApi
+      ? NextResponse.json({ error: "Platform admin access required" }, { status: 403 })
+      : NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  // Platform admins don't belong to a college, so college features don't apply to them.
+  if (session?.role === "superadmin" && !isPlatform) {
+    const allowed = pathname === "/dashboard/settings" || pathname.startsWith("/api/auth/");
+    if (isApi && !allowed) {
+      return NextResponse.json({ error: "Not available to platform admins" }, { status: 403 });
+    }
+    if (isProtectedPage && !allowed) {
+      return NextResponse.redirect(new URL("/dashboard/platform", request.url));
+    }
   }
 
   if (isAdmin && session?.role !== "admin") {
