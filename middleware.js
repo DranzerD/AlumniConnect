@@ -14,7 +14,6 @@ export async function middleware(request) {
 
   const isApi = pathname.startsWith("/api/");
   const isProtectedPage = pathname.startsWith("/dashboard");
-  const isAdmin = pathname.startsWith("/dashboard/admin") || pathname.startsWith("/api/admin");
   const isPlatform = pathname.startsWith("/dashboard/platform") || pathname.startsWith("/api/platform");
 
   if (isApi && !PUBLIC_API.includes(pathname) && !session) {
@@ -46,11 +45,9 @@ export async function middleware(request) {
     }
   }
 
-  if (isAdmin && session?.role !== "admin") {
-    return isApi
-      ? NextResponse.json({ error: "Admin access required" }, { status: 403 })
-      : NextResponse.redirect(new URL("/dashboard", request.url));
-  }
+  // College-admin access is NOT gated here: the role in the JWT goes stale when an
+  // admin promotes or demotes someone. /api/admin/* handlers use requireRole("admin")
+  // and app/dashboard/admin/page.js checks the role, both against the database.
 
   if (AUTH_PAGES.includes(pathname) && session) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
