@@ -1,0 +1,54 @@
+PASS  unauthenticated API -> 401 from middleware
+PASS  unauthenticated page -> redirect to /login?next=  -- /login?next=%2Fdashboard
+PASS  security headers present
+PASS  no Content-Security-Policy header
+PASS  demo login sets cookie
+PASS  cookie flags httpOnly + SameSite=lax  -- ac_session=<token>; Path=/; Expires=Tue, 24 Nov 2026 11:27:24 GMT; Max-Age=604800; Secure; HttpOnly; SameSite=lax
+PASS  wrong password -> 401
+PASS  unknown email -> same 401 message
+PASS  malformed JSON -> 400
+PASS  invalid email -> 422 with details
+PASS  directory search scoped to own college
+PASS  cross-college profile -> 404 (not 403)
+PASS  cross-college connect -> 404
+PASS  cross-college thread -> 404
+PASS  student -> /api/admin 403
+PASS  student -> /dashboard/admin redirected to /dashboard  -- 307 /dashboard
+PASS  student -> /api/platform 403
+PASS  student cannot post jobs -> 403
+PASS  platform admin redirect target
+PASS  platform admin blocked from college API -> 403
+PASS  seeded career fair is full (3/3)
+PASS  RSVP to full event -> 409
+PASS  double RSVP -> 409
+PASS  alumni creates event -> 201
+PASS  5 concurrent RSVPs to capacity-1 event: exactly 1 succeeds  -- 201=1 409=4
+PASS  complete a pending request -> 409
+PASS  mentor tries mentee-only cancel -> 403
+PASS  directory shows pending_received for Priya
+PASS  connect to someone who requested you -> accepted
+PASS  message a non-connection -> 403
+PASS  search '%' treated literally (0 results)  -- total=0
+PASS  alex token works before deactivation
+PASS  admin deactivates user -> 200
+PASS  deactivated user's existing JWT -> 401 on next API call
+PASS  summary pending-connection badge excludes deactivated requesters (fixed bug)  -- summary.connections=0 incoming.length=0
+PASS  admin promotes user to admin -> 200
+PASS  promoted user with old JWT can reach /api/admin (fixed bug)  -- status=200
+PASS  demoted admin with admin-role JWT -> 403 from requireRole (DB re-check)  -- status=403
+PASS  password change -> 200
+PASS  PROBE: old session still valid after password change  -- status=200
+PASS  11th failed login in window -> 429  -- Too many attempts. Try again in 899 seconds.
+PASS  PROBE: changing X-Forwarded-For resets the limit  -- status=401
+PASS  correct password while limited -> still 429
+PASS  platform admin deactivates college
+PASS  member of deactivated college -> 401
+PASS  login to deactivated college -> 403
+PASS  deactivated college hidden from sign-up list
+PASS  register with wrong domain -> 422
+PASS  self-register as faculty -> 422
+PASS  weak password (no digit) -> 422
+PASS  valid registration -> 201
+PASS  javascript: URL rejected -> 422
+
+TOTAL 52  PASS 52  FAIL 0

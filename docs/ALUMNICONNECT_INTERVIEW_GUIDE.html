@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AlumniConnect Study Handbook</title>
+<meta name="description" content="Interactive interview study handbook for the AlumniConnect codebase (commit 7989a52).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f7f7f5;--surface:#ffffff;--surface-2:#f0f0ec;--text:#1b1d1c;--muted:#5d625f;--border:#dcdcd6;
+  --accent:#1f6f5c;--accent-ink:#ffffff;--accent-soft:#e3f0ec;
+  --good:#1f6a3a;--good-bg:#e6f3ea;--warn:#7a5200;--warn-bg:#fbf1dc;--bad:#9b2420;--bad-bg:#fbe7e5;
+  --code-bg:#f2f2ee;--shadow:0 1px 2px rgba(0,0,0,.05);
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121514;--surface:#1a1e1c;--surface-2:#222725;--text:#e7eae8;--muted:#a1a8a4;--border:#323835;
+    --accent:#5cc2a6;--accent-ink:#0d1f1a;--accent-soft:#1c3530;
+    --good:#7fd69c;--good-bg:#173023;--warn:#f0c46a;--warn-bg:#33290f;--bad:#f2928c;--bad-bg:#3a1a18;
+    --code-bg:#202523;--shadow:none;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121514;--surface:#1a1e1c;--surface-2:#222725;--text:#e7eae8;--muted:#a1a8a4;--border:#323835;
+  --accent:#5cc2a6;--accent-ink:#0d1f1a;--accent-soft:#1c3530;
+  --good:#7fd69c;--good-bg:#173023;--warn:#f0c46a;--warn-bg:#33290f;--bad:#f2928c;--bad-bg:#3a1a18;
+  --code-bg:#202523;--shadow:none;color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 var(--sans);overflow-x:hidden}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+code,pre,kbd{font-family:var(--mono);font-size:.9em}
+code{background:var(--code-bg);padding:.1em .35em;border-radius:4px;overflow-wrap:anywhere}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;overflow-x:auto;margin:0;line-height:1.5}
+pre code{background:none;padding:0;overflow-wrap:normal}
+h1,h2,h3,h4{line-height:1.25;margin:0 0 .5em}
+h2{font-size:1.55rem}h3{font-size:1.12rem;margin-top:1.4em}
+p{margin:0 0 .9em}
+ul,ol{padding-left:1.3em;margin:0 0 1em}
+li{margin:.2em 0}
+table{width:100%;border-collapse:collapse;font-size:.93rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-weight:600;background:var(--surface-2)}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:8px;margin:0 0 1.2em;background:var(--surface)}
+.table-wrap table{min-width:560px}
+.skip{position:absolute;left:-999px;top:0}.skip:focus{left:16px;top:8px;background:var(--surface);padding:8px;z-index:10}
+
+/* top bar */
+.topbar{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--border)}
+.topbar-in{max-width:1200px;margin:0 auto;padding:10px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between}
+.brand{font-weight:600;letter-spacing:.01em}
+.brand small{color:var(--muted);font-weight:400;margin-left:8px;font-family:var(--mono);font-size:.78rem}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font:inherit;font-size:.88rem;border:1px solid var(--border);background:var(--surface);color:var(--text);padding:6px 12px;border-radius:6px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* layout */
+.layout{max-width:1200px;margin:0 auto;padding:0 16px;display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px}
+.rail{position:sticky;top:58px;align-self:start;max-height:calc(100vh - 70px);overflow-y:auto;padding:24px 0}
+.rail ol{list-style:none;padding:0;margin:0;counter-reset:ch}
+.rail li{margin:0}
+.rail a{display:block;padding:5px 10px;border-radius:6px;color:var(--muted);text-decoration:none;font-size:.9rem;border-left:2px solid transparent}
+.rail a:hover{color:var(--text);background:var(--surface-2)}
+.rail a.active{color:var(--accent);border-left-color:var(--accent);background:var(--accent-soft)}
+main{min-width:0;padding:24px 0 80px}
+section.chapter{padding:28px 0 12px;border-top:1px solid var(--border);counter-increment:chapter}
+main{counter-reset:chapter}
+.eyebrow{font-family:var(--mono);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:6px}
+section.chapter .eyebrow::before{content:"Chapter " counter(chapter)}
+@media (max-width:900px){
+  .layout{grid-template-columns:minmax(0,1fr);gap:0}
+  .topbar{position:static}
+  .rail{position:sticky;top:0;z-index:15;max-height:none;overflow-x:auto;overflow-y:hidden;padding:8px 0;background:var(--bg);border-bottom:1px solid var(--border);margin:0 -16px;padding-left:16px;padding-right:16px}
+  .rail ol{display:flex;gap:6px;white-space:nowrap}
+  .rail a{border:1px solid var(--border);border-radius:999px;padding:4px 12px;background:var(--surface)}
+  .rail a.active{border-color:var(--accent)}
+  .brand small{display:none}
+}
+
+/* hero */
+.hero{padding:36px 0 24px}
+.hero h1{font-size:clamp(1.9rem,4vw,2.6rem);margin-bottom:.3em}
+.hero .lede{color:var(--muted);max-width:70ch}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);background:var(--surface);border-radius:8px;padding:14px 16px;margin:0 0 1.2em;box-shadow:var(--shadow)}
+.callout p:last-child{margin-bottom:0}
+.callout.good{border-left-color:var(--good);background:var(--good-bg)}
+.callout.warn{border-left-color:var(--warn);background:var(--warn-bg)}
+.callout.bad{border-left-color:var(--bad);background:var(--bad-bg)}
+.callout .label{display:block;font-family:var(--mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 1.2em;padding:0;list-style:none}
+.chips li{font-family:var(--mono);font-size:.78rem;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:3px 10px;margin:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:0 0 1.2em}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;box-shadow:var(--shadow)}
+.card h3{margin-top:0;font-size:1rem}
+.card p{margin:0;color:var(--muted);font-size:.93rem}
+.stat{font-size:1.6rem;font-weight:600;font-family:var(--mono);display:block;color:var(--text)}
+
+/* flow steps */
+.steps{counter-reset:step;list-style:none;padding:0}
+.steps>li{position:relative;padding:0 0 12px 40px;margin:0}
+.steps>li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font:600 .8rem/26px var(--mono);text-align:center}
+
+/* details */
+details{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin:0 0 8px}
+details>summary{cursor:pointer;padding:10px 14px;font-weight:500;list-style-position:inside}
+details>summary .path{font-family:var(--mono);font-size:.82rem;color:var(--accent);margin-right:6px}
+details[open]>summary{border-bottom:1px solid var(--border)}
+details .body{padding:12px 14px}
+details .body>*:last-child{margin-bottom:0}
+
+/* Q&A */
+.qa-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+.qa-controls input[type=search]{flex:1 1 220px;min-width:0;font:inherit;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.count{font-family:var(--mono);font-size:.82rem;color:var(--muted)}
+.qa .cat{font-family:var(--mono);font-size:.7rem;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:1px 7px;margin-left:6px;white-space:nowrap}
+body.selftest .ans{filter:blur(6px);cursor:pointer;user-select:none}
+body.selftest .ans.revealed{filter:none;cursor:auto;user-select:auto}
+body.selftest .ans::after{content:""}
+
+/* svg */
+.diagram{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin:0 0 1.2em;overflow-x:auto}
+.diagram svg{display:block;width:100%;min-width:560px;height:auto}
+.diagram text{fill:var(--text);font-family:var(--sans);font-size:13px}
+.diagram .sub{fill:var(--muted);font-size:11px;font-family:var(--mono)}
+.diagram .box{fill:var(--surface-2);stroke:var(--border);stroke-width:1.2}
+.diagram .box.acc{fill:var(--accent-soft);stroke:var(--accent)}
+.diagram .line{stroke:var(--muted);stroke-width:1.4;fill:none}
+.diagram .zone{fill:none;stroke:var(--border);stroke-dasharray:5 4}
+.diagram .arrowhead{fill:var(--muted)}
+
+/* run */
+.cmd{position:relative;margin:0 0 10px}
+.cmd pre{padding-right:72px}
+.copy{position:absolute;top:8px;right:8px;font-size:.75rem;padding:3px 8px}
+
+/* checklist */
+.checklist{list-style:none;padding:0}
+.checklist li{margin:0 0 6px}
+.checklist label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.checklist input{margin-top:5px;accent-color:var(--accent);width:16px;height:16px;flex-shrink:0}
+.progress{height:8px;background:var(--surface-2);border-radius:999px;overflow:hidden;margin:6px 0 14px;border:1px solid var(--border)}
+.progress>span{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+dl.gloss{display:grid;grid-template-columns:minmax(140px,220px) minmax(0,1fr);gap:6px 18px;margin:0}
+dl.gloss dt{font-weight:600}
+dl.gloss dd{margin:0;color:var(--muted)}
+@media (max-width:600px){dl.gloss{grid-template-columns:minmax(0,1fr)}dl.gloss dd{margin-bottom:8px}}
+footer{color:var(--muted);font-size:.85rem;padding:24px 0;border-top:1px solid var(--border)}
+
+@media print{
+  .topbar,.rail,.tools,.qa-controls,.filters,.copy{display:none!important}
+  .layout{display:block}
+  body{background:#fff;color:#000}
+  details{break-inside:avoid}
+  details>summary{list-style:none}
+  details .body{display:block!important}
+  body.selftest .ans{filter:none}
+  section.chapter{break-before:page}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand">AlumniConnect handbook <small>commit 2c27616</small></div>
+    <div class="tools">
+      <button class="btn" id="selftest" aria-pressed="false" title="Blur answers until you click them">Self-test</button>
+      <button class="btn" id="theme" aria-label="Toggle colour theme">Theme</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+<nav class="rail" aria-label="Chapters">
+  <ol>
+    <li><a href="#top">Overview</a></li>
+    <li><a href="#mental-model">Mental model</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#why">Why each choice</a></li>
+    <li><a href="#flows">End-to-end flows</a></li>
+    <li><a href="#ideas">Ideas in depth</a></li>
+    <li><a href="#code">The code, function by function</a></li>
+    <li><a href="#file-map">File map</a></li>
+    <li><a href="#api">API and data shapes</a></li>
+    <li><a href="#numbers">The numbers</a></li>
+    <li><a href="#bugs">Bug stories</a></li>
+    <li><a href="#tests">Tests</a></li>
+    <li><a href="#security">Security checklist</a></li>
+    <li><a href="#weak">What is still weak</a></li>
+    <li><a href="#stale">Corrections and stale spots</a></li>
+    <li><a href="#run">Run, poke, debug</a></li>
+    <li><a href="#glossary">Glossary</a></li>
+    <li><a href="#extend">How to extend</a></li>
+    <li><a href="#drill">Q&amp;A drill</a></li>
+    <li><a href="#quiz">Self-quiz</a></li>
+    <li><a href="#deliver">How to deliver</a></li>
+    <li><a href="#checklist">Final checklist</a></li>
+  </ol>
+</nav>
+
+<main id="main">
+<section class="hero" id="top">
+  <div class="eyebrow">Study handbook</div>
+  <h1>AlumniConnect</h1>
+  <p class="lede">A multi-college alumni network built with Next.js 15, React 19 and SQLite. Every fact here is checked against the code at commit <code>2c27616</code> (<code>7989a52</code> plus the badge and admin-gate fixes); numbers come from <code>docs/smoke-check-output.txt</code> and from lint and build runs. The Markdown sources are <code>ARCHITECTURE.md</code>, <code>CODEBASE_GUIDE.md</code> and <code>INTERVIEW_PREP.md</code> in the same folder.</p>
+  <div class="callout">
+    <span class="label">30-second pitch, say it aloud</span>
+    <p>"Colleges lose touch with their graduates, and students have no private way to reach alumni for referrals or advice. AlumniConnect gives each college its own private network: you sign up with your college email, then search the directory, connect, message, share jobs, RSVP to events and request mentorship. One deployment serves many colleges, and a platform admin can onboard or switch off a college without touching anyone else. The part I'd like to talk about is the access-control design: the session token only proves who you are, and every request re-checks your role, your account and your college in the database, so revoking access is immediate, and every query is scoped to your college."</p>
+  </div>
+  <ul class="chips" aria-label="Tech stack">
+    <li>Next.js 15.5 App Router</li><li>React 19</li><li>SQLite / better-sqlite3 12.5</li><li>jose (JWT HS256)</li><li>bcryptjs</li><li>Edge middleware</li><li>CSS tokens + Modules</li><li>Render blueprint</li>
+  </ul>
+  <div class="cards">
+    <div class="card"><h3>Token says who, DB says what</h3><p>Middleware verifies the JWT; every handler re-reads user, role and college from SQLite.</p></div>
+    <div class="card"><h3>Every query carries a college</h3><p>Shared-schema multi-tenancy; cross-college lookups return 404, not 403.</p></div>
+    <div class="card"><h3>Invariants live in transactions and constraints</h3><p>RSVP capacity, mutual requests and the superadmin rule are atomic or enforced by CHECK/UNIQUE.</p></div>
+    <div class="card"><h3>One error dialect</h3><p><code>handler()</code> + <code>validate()</code> give every route the same <code>{ error, details }</code> shape.</p></div>
+  </div>
+</section>
+
+<section class="chapter" id="mental-model">
+  <div class="eyebrow"></div>
+  <h2>The 60-second mental model</h2>
+  <p>The app does three jobs:</p>
+  <ol>
+    <li><strong>Gatekeeping:</strong> who you are (JWT cookie) and what you may do right now (role and active status from the database).</li>
+    <li><strong>Tenant-scoped CRUD:</strong> directory, connections, messages, jobs, events, mentorship and notifications, all filtered to your college.</li>
+    <li><strong>Two-level administration:</strong> college admins manage one college; the platform admin adds colleges, appoints admins and switches colleges on or off.</li>
+  </ol>
+  <p>It is split this way because Next.js middleware runs on the Edge runtime and cannot open SQLite, so it does only cheap token work. Everything that needs data runs in Node route handlers and server components that share <code>lib/</code>. One process, one database file, nothing else to coordinate.</p>
+  <div class="callout good"><span class="label">One sentence</span><p>The token says who you are, the database says what you may do, and every query carries your college id.</p></div>
+</section>
+
+<section class="chapter" id="architecture">
+  <div class="eyebrow"></div>
+  <h2>Architecture</h2>
+  <div class="diagram" role="img" aria-label="Architecture diagram: browser to Edge middleware, then to server components or route handlers, both using lib helpers that read and write one SQLite file; route handlers also use an in-memory rate limiter.">
+  <svg viewBox="0 0 760 330" xmlns="http://www.w3.org/2000/svg">
+    <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+    <rect class="box" x="20" y="130" width="130" height="64" rx="8"/>
+    <text x="85" y="157" text-anchor="middle">Browser</text>
+    <text class="sub" x="85" y="176" text-anchor="middle">lib/client.js api()</text>
+    <rect class="zone" x="180" y="18" width="560" height="294" rx="10"/>
+    <text class="sub" x="196" y="38">Next.js server process (single instance)</text>
+    <rect class="box acc" x="200" y="130" width="140" height="64" rx="8"/>
+    <text x="270" y="157" text-anchor="middle">middleware.js</text>
+    <text class="sub" x="270" y="176" text-anchor="middle">Edge: JWT, platform gate</text>
+    <rect class="box" x="380" y="60" width="160" height="60" rx="8"/>
+    <text x="460" y="86" text-anchor="middle">Server components</text>
+    <text class="sub" x="460" y="104" text-anchor="middle">dashboard/admin/platform</text>
+    <rect class="box" x="380" y="204" width="160" height="60" rx="8"/>
+    <text x="460" y="230" text-anchor="middle">Route handlers</text>
+    <text class="sub" x="460" y="248" text-anchor="middle">app/api 26 files</text>
+    <rect class="box acc" x="580" y="130" width="140" height="64" rx="8"/>
+    <text x="650" y="157" text-anchor="middle">lib/*</text>
+    <text class="sub" x="650" y="176" text-anchor="middle">session, domain, db</text>
+    <rect class="box" x="580" y="244" width="140" height="48" rx="8"/>
+    <text x="650" y="273" text-anchor="middle">Rate-limit Map</text>
+    <path class="line" d="M150 162 H198" marker-end="url(#ah)"/>
+    <path class="line" d="M340 150 L378 100" marker-end="url(#ah)"/>
+    <path class="line" d="M340 175 L378 225" marker-end="url(#ah)"/>
+    <path class="line" d="M540 92 L578 145" marker-end="url(#ah)"/>
+    <path class="line" d="M540 232 L578 180" marker-end="url(#ah)"/>
+    <path class="line" d="M540 250 L578 266" marker-end="url(#ah)"/>
+    <path class="line" d="M650 130 V70" marker-end="url(#ah)"/>
+    <rect class="box" x="590" y="28" width="120" height="40" rx="20"/>
+    <text x="650" y="53" text-anchor="middle">SQLite (WAL)</text>
+  </svg>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Data</th><th>Store</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>10 tables: colleges, users, profiles, connections, messages, jobs, events, event_rsvps, mentorship_requests, notifications</td><td>SQLite file <code>DATABASE_PATH</code> (default <code>data/alumniconnect.db</code>)</td><td>ACID, foreign keys, zero setup</td></tr>
+      <tr><td>Session identity</td><td>HS256 JWT in httpOnly cookie <code>ac_session</code></td><td>Stateless check in Edge middleware</td></tr>
+      <tr><td>Rate-limit counters</td><td>In-process <code>Map</code></td><td>Simplest for one process; lost on restart</td></tr>
+      <tr><td>Current user per request</td><td>React <code>cache()</code></td><td>One lookup per request</td></tr>
+    </tbody>
+  </table></div>
+  <p>There are no server-to-server calls. The database is a library call in the same process.</p>
+</section>
+
+<section class="chapter" id="why">
+  <div class="eyebrow"></div>
+  <h2>Why each choice was made</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Choice</th><th>Instead of</th><th>Why</th><th>Cost</th></tr></thead>
+    <tbody>
+      <tr><td>Next.js App Router</td><td>Express + SPA</td><td>One codebase and deploy; server components read the DB directly</td><td>UI and API scale together</td></tr>
+      <tr><td>SQLite (better-sqlite3)</td><td>PostgreSQL</td><td>Zero setup; synchronous transactions; real constraints</td><td>Single host, single writer</td></tr>
+      <tr><td>jose</td><td>jsonwebtoken</td><td>Web Crypto: runs in Edge middleware and Node</td><td>none significant</td></tr>
+      <tr><td>JWT cookie</td><td>Session table</td><td>No DB in middleware; DB re-check in handlers gives revocation</td><td>Logout and password change don't kill old tokens</td></tr>
+      <tr><td>bcryptjs cost 10</td><td>native bcrypt, argon2</td><td>Pure JS</td><td>Slower; low end of current advice</td></tr>
+      <tr><td>Hand-written <code>validate()</code></td><td>zod</td><td>No dependency; exact error shape</td><td>Rules not shared with client</td></tr>
+      <tr><td>In-memory rate limiter</td><td>Redis</td><td>No infrastructure</td><td>Per process; spoofable IP key</td></tr>
+      <tr><td>Polling</td><td>WebSockets/SSE</td><td>Works on any host</td><td>Up to 4 s latency, constant requests</td></tr>
+      <tr><td>CSS tokens + Modules</td><td>Tailwind</td><td>No build plugin</td><td>More CSS by hand</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="chapter" id="flows">
+  <div class="eyebrow"></div>
+  <h2>How it works end to end</h2>
+  <h3>Send a connection request</h3>
+  <ol class="steps">
+    <li><code>ConnectButton.connect()</code> calls <code>api("/api/connections", POST {user_id})</code>.</li>
+    <li><code>middleware.js</code> verifies the JWT; no token means 401.</li>
+    <li><code>POST</code> in <code>app/api/connections/route.js</code> runs inside <code>handler()</code>; <code>requireUser()</code> re-reads the user and college.</li>
+    <li><code>validate()</code> checks <code>user_id</code>; connecting to yourself is 422.</li>
+    <li><code>getColleague()</code> loads the target only if same college and active, else 404.</li>
+    <li>In <code>transaction()</code>, <code>findConnection()</code> looks both ways: accepted is 409, mine pending is 409, theirs pending gets accepted, none inserts pending.</li>
+    <li><code>notify()</code> writes a notification; response 201 <code>{ connection: { id, status } }</code>.</li>
+  </ol>
+  <h3>RSVP to a capacity-limited event</h3>
+  <ol class="steps">
+    <li><code>events/page.js</code> posts to <code>/api/events/:id/rsvp</code>.</li>
+    <li><code>loadEvent()</code> requires same college (404) and a future start (409).</li>
+    <li>In one transaction: already registered is 409, <code>COUNT(*) &gt;= capacity</code> is 409 "This event is full", else insert.</li>
+    <li>Measured: 5 concurrent RSVPs to capacity 1 gave 1 x 201 and 4 x 409.</li>
+  </ol>
+  <h3>Log in</h3>
+  <ol class="steps">
+    <li>Validate email and password (max 72).</li>
+    <li><code>rateLimit("login:ip:email", 10 per 15 min)</code> before touching the DB.</li>
+    <li><code>LEFT JOIN colleges</code> so the college-less superadmin is found.</li>
+    <li><code>bcrypt.compare</code> against the real hash or <code>DUMMY_HASH</code>; same 401 either way.</li>
+    <li>403 if the user or (for non-superadmins) the college is inactive.</li>
+    <li><code>signSession()</code> sets a 7-day cookie; response carries <code>redirect</code>; the page applies <code>safeNext()</code>.</li>
+  </ol>
+  <h3>Deactivate a member</h3>
+  <ol class="steps">
+    <li><code>UserManagement.js</code> sends <code>PATCH /api/admin/users/:id {is_active:false}</code>.</li>
+    <li>Middleware only checks the JWT is valid; <code>requireRole("admin")</code> checks the role in the DB (the token's role can be stale).</li>
+    <li>Not yourself (422); target must be in your college (404).</li>
+    <li>The target's next request fails <code>getCurrentUser()</code>: API 401, pages redirect to <code>/login</code>. Verified.</li>
+  </ol>
+  <h3>Chat with polling</h3>
+  <ol class="steps">
+    <li>Open thread: <code>GET /api/messages/:userId</code> returns up to 200 messages and marks theirs read.</li>
+    <li>Every 4 s: <code>GET ?after=&lt;lastId&gt;</code>; a <code>Set</code> of ids dedupes.</li>
+    <li>Send: <code>POST</code> requires an accepted connection, else 403.</li>
+    <li>Conversation list every 15 s; nav badges every 20 s via <code>/api/summary</code>.</li>
+  </ol>
+</section>
+
+<section class="chapter" id="ideas">
+  <div class="eyebrow"></div>
+  <h2>The ideas worth understanding deeply</h2>
+  <h3>7.1 Two-layer authorization</h3><ul><li><strong>Problem:</strong> a JWT cannot be revoked; it stays valid until it expires (7 days here).</li><li><strong>Solution:</strong> <code>middleware.js</code> verifies the signature (cheap, Edge). <code>requireUser()</code> in <code>lib/session.js</code> re-reads the user and college from SQLite on every API call and every dashboard render.</li><li><strong>Alternative:</strong> server-side session table checked in middleware, or short-lived access tokens plus refresh tokens.</li><li><strong>Trade-off:</strong> one indexed DB read per request. Middleware must not make authorization decisions from the token's role, because it goes stale; the college-admin gate was removed from middleware for exactly that reason.</li></ul><div class="callout good"><span class="label">Interview sentence</span><p>"The token only proves identity; authorization is re-derived from the database on every request, so deactivating a user or a college takes effect on their next click."</p></div><h3>7.2 Multi-tenancy by column, 404 not 403</h3><ul><li><strong>Problem:</strong> many colleges share one database; nobody may see another college's data.</li><li><strong>Solution:</strong> <code>college_id</code> on users, jobs and events; every college-scoped query filters by <code>me.collegeId</code>; <code>getColleague()</code> is the single gate for user-to-user actions. A row from another college is &quot;not found&quot;.</li><li><strong>Alternative:</strong> database-per-tenant or PostgreSQL row-level security.</li><li><strong>Trade-off:</strong> isolation depends on every query remembering the filter; there is no database-enforced policy. Messages, connections and notifications are scoped by user id instead, and stay correct because the users at both ends were checked through <code>getColleague()</code> when the row was created.</li></ul><div class="callout good"><span class="label">Interview sentence</span><p>"Tenant isolation is a shared-schema design with a college_id filter, and cross-tenant lookups return 404 so they don't even confirm the resource exists."</p></div><h3>7.3 Race-free capacity check</h3><ul><li><strong>Problem:</strong> two people take the last seat at the same moment.</li><li><strong>Solution:</strong> in <code>app/api/events/[id]/rsvp/route.js</code>, count and insert run inside one <code>transaction()</code>. <code>better-sqlite3</code> is synchronous, so the whole transaction executes without yielding the event loop.</li><li><strong>Alternative:</strong> a conditional <code>INSERT ... SELECT ... WHERE (SELECT COUNT(*) ...) &lt; capacity</code>, or <code>SELECT ... FOR UPDATE</code> on PostgreSQL.</li><li><strong>Trade-off:</strong> correct only while writes are serialised by one process plus SQLite's lock. Measured: 5 concurrent attempts on capacity 1 gave one 201 and four 409s.</li></ul><div class="callout good"><span class="label">Interview sentence</span><p>"The check and the insert are one atomic unit; on Postgres I'd lock the event row or make the insert conditional."</p></div><h3>7.4 Mutual connection requests</h3><ul><li><strong>Problem:</strong> A requests B while B already requested A; the schema's <code>UNIQUE (requester_id, addressee_id)</code> would allow both rows.</li><li><strong>Solution:</strong> <code>findConnection()</code> searches both directions inside a transaction; if B already asked, A's request accepts it.</li><li><strong>Alternative:</strong> store pairs canonically (<code>LEAST(a,b), GREATEST(a,b)</code>) with a unique index.</li><li><strong>Trade-off:</strong> the invariant lives in code, so the mentorship accept path also had to use <code>findConnection()</code>.</li></ul><div class="callout good"><span class="label">Interview sentence</span><p>"Pair uniqueness in either direction is enforced in the transaction, and a crossing request becomes an accept instead of a duplicate."</p></div><h3>7.5 Mentorship as a state machine</h3><ul><li><strong>Problem:</strong> many actions, each legal only for one party in one state.</li><li><strong>Solution:</strong> <code>TRANSITIONS</code> in <code>app/api/mentorship/[id]/route.js</code>: <code>{ by, from, to }</code> per action. Wrong actor -&gt; 403, wrong state -&gt; 409; <code>cancel</code> deletes.</li><li><strong>Alternative:</strong> nested <code>if</code>s per action.</li><li><strong>Trade-off:</strong> compact and auditable, but the status check and the update are not inside one transaction, so two simultaneous transitions could both pass the check (low risk, one process).</li></ul><div class="callout good"><span class="label">Interview sentence</span><p>"Every legal move is one row in a table, so adding a state is a data change, and illegal moves get a 409."</p></div><h3>7.6 Timing-safe login and enumeration</h3><ul><li><strong>Problem:</strong> if unknown emails return faster, an attacker can list registered users.</li><li><strong>Solution:</strong> <code>DUMMY_HASH</code> precomputed at module load; <code>bcrypt.compare</code> always runs; one generic 401 message.</li><li><strong>Trade-off:</strong> registration still says &quot;An account with this email already exists&quot; (409), so enumeration is possible there; rate limiting slows it.</li></ul><div class="callout good"><span class="label">Interview sentence</span><p>"Login does the same bcrypt work whether or not the account exists, so response time doesn't leak which emails are registered."</p></div><h3>7.7 One validator, one error shape</h3><ul><li><strong>Problem:</strong> consistent 4xx responses the UI can map to fields.</li><li><strong>Solution:</strong> <code>validate()</code> returns a whitelisted object or throws <code>HttpError(422, firstMessage, details)</code>; <code>handler()</code> turns it into <code>{ error, details }</code>; <code>ApiError</code> on the client exposes <code>details</code>; forms pass <code>errors.&lt;field&gt;</code> to <code>Field</code>.</li><li><strong>Alternative:</strong> zod schemas shared with the client.</li><li><strong>Trade-off:</strong> small and dependency-free, but validation rules are not shared with the browser.</li></ul><div class="callout good"><span class="label">Interview sentence</span><p>"Every route speaks the same error dialect, so any form can show server-side field errors without custom code."</p></div><h3>7.8 Schema on startup, and a guard for what can't migrate</h3><ul><li><strong>Problem:</strong> zero-setup local runs, but schema evolution.</li><li><strong>Solution:</strong> <code>openDatabase()</code> re-applies idempotent <code>schema.sql</code> on every start and seeds an empty DB. Because SQLite cannot alter a CHECK constraint, it detects the pre-platform-admin schema and throws with a &quot;run db:reset&quot; message.</li><li><strong>Alternative:</strong> a migration tool.</li><li><strong>Trade-off:</strong> fine for demo data; destroys data on schema change.</li></ul><div class="callout good"><span class="label">Interview sentence</span><p>"The schema is applied idempotently at boot; there are no migrations yet, and the app fails loudly rather than run on an incompatible schema."</p></div><h3>7.9 A constraint that encodes the tenancy rule</h3><ul><li><code>CHECK ((role = 'superadmin') = (college_id IS NULL))</code> in <code>users</code>: platform admins have no college and everyone else must have one. Bad data cannot be inserted even by a buggy route.</li></ul><div class="callout good"><span class="label">Interview sentence</span><p>"The rule that only platform admins live outside a college is a database CHECK, not just application logic."</p></div><h3>7.10 Cursor polling for chat</h3><ul><li><strong>Problem:</strong> near-real-time chat without WebSockets.</li><li><strong>Solution:</strong> the client remembers the last message id (<code>lastIdRef</code>) and asks for <code>?after=&lt;id&gt;</code>; ids are monotonic (<code>AUTOINCREMENT</code>), so no message is missed or repeated; a <code>Set</code> dedupes the optimistic append.</li><li><strong>Trade-off:</strong> latency up to 4 s; about 22 background requests per minute per user with a chat open.</li></ul><div class="callout good"><span class="label">Interview sentence</span><p>"Polling uses the message id as a cursor, so each poll returns only new rows and is cheap with the (sender, recipient, id) index."</p></div><h3>7.11 Server components for read-heavy pages</h3><ul><li><code>app/dashboard/page.js</code>, <code>admin/page.js</code> and <code>platform/page.js</code> query SQLite directly instead of calling their own API. No extra HTTP hop and no loading spinner on first paint; interactive pages stay client components with <code>useApi</code>.</li><li><strong>Trade-off:</strong> two code paths read the same data (SQL in pages and in routes) and can drift.</li></ul>
+</section>
+
+<section class="chapter" id="code">
+  <div class="eyebrow"></div>
+  <h2>The code, function by function</h2>
+  <p>Open a fold, read the summary, then open the real file and find each name.</p>
+  <h3>Edge</h3><details><summary><span class="path">middleware.js</span></summary><div class="body"><ul><li>Responsibility: authentication gate for all non-static paths, the platform (superadmin) gate, superadmin confinement, security headers.</li><li>Key items: <code>PUBLIC_API</code>, <code>AUTH_PAGES</code>, <code>withSecurityHeaders()</code>, <code>config.matcher</code> (excludes <code>_next/static</code>, <code>_next/image</code>, <code>favicon.ico</code>, <code>robots.txt</code>).</li><li>Depends on: <code>lib/auth.js</code> only (Edge-safe).</li><li>Gotcha: anything it reads from the JWT can be stale. That is why it no longer gates <code>/api/admin</code> or <code>/dashboard/admin</code> on the token's role (a promoted admin used to be blocked until re-login); those are checked against the database by <code>requireRole(&quot;admin&quot;)</code> and <code>app/dashboard/admin/page.js</code>.</li></ul></div></details><h3>lib (server)</h3><details><summary><span class="path">lib/auth.js</span></summary><div class="body"><ul><li><code>signSession()</code>, <code>verifySession()</code>, <code>sessionCookieOptions()</code>, constants <code>SESSION_COOKIE = &quot;ac_session&quot;</code>, <code>SESSION_TTL_SECONDS</code> (7 days).</li><li><code>getSecret()</code> throws in production without <code>JWT_SECRET</code>, and for any secret under 32 chars.</li><li>Used by middleware, login, register, logout and <code>lib/session.js</code>.</li><li>Gotcha: <code>verifySession()</code> swallows all errors and returns <code>null</code>, so a misconfigured secret looks like &quot;logged out&quot;.</li></ul></div></details><details><summary><span class="path">lib/session.js</span></summary><div class="body"><ul><li><code>getCurrentUser</code> (React <code>cache()</code>), <code>requireUser()</code>, <code>requireRole(...roles)</code>.</li><li>The query requires <code>u.is_active = 1 AND (u.role = 'superadmin' OR c.is_active = 1)</code>; returns <code>{ id, email, role, collegeId, collegeName, fullName }</code>.</li><li>Used by every route handler and every server page.</li><li>Gotcha: <code>cache()</code> dedupes per request only; there is no cross-request caching, so each API call costs one indexed primary-key lookup.</li></ul></div></details><details><summary><span class="path">lib/db.js</span></summary><div class="body"><ul><li><code>getDb()</code> caches one <code>better-sqlite3</code> handle on <code>globalThis.__alumniConnectDb</code> so dev hot reloads do not leak handles.</li><li>Helpers <code>all</code>, <code>get</code>, <code>run</code> prepare and run a statement; <code>transaction(fn)</code> wraps <code>db.transaction(fn)()</code>.</li><li>Gotcha: statements are prepared on every call (no statement cache). Cheap for SQLite, but a known micro-optimisation.</li></ul></div></details><details><summary><span class="path">lib/http.js</span></summary><div class="body"><ul><li><code>HttpError(status, message, details)</code>, <code>handler(fn)</code>, <code>json</code>, <code>readJson</code> (400 unless a JSON object), <code>parseId</code> (404 unless positive integer), <code>getPagination</code> (default 20, max 50).</li><li>Gotcha: <code>handler()</code> turns any non-<code>HttpError</code> into 500, including SQLite <code>UNIQUE</code> violations (see section 12).</li></ul></div></details><details><summary><span class="path">lib/validation.js</span></summary><div class="body"><ul><li><code>validate(input, rules, { partial })</code> supports <code>string</code>, <code>password</code> (not trimmed), <code>email</code> (lower-cased), <code>url</code> (http/https only), <code>int</code>, <code>bool</code>, <code>enum</code>, <code>datetime</code> (normalised to ISO).</li><li>Returns only declared fields: a whitelist, which is what makes the dynamic <code>UPDATE</code> in <code>profiles/me</code> safe.</li><li><code>PASSWORD_RULE</code> (8-72), <code>assertStrongPassword()</code> (letter + digit).</li><li>Gotcha: with <code>partial: true</code>, an explicitly empty value becomes <code>null</code> (or <code>false</code> for bool) and is written; omitted fields are left unchanged.</li></ul></div></details><details><summary><span class="path">lib/domain.js</span></summary><div class="body"><ul><li><code>getColleague()</code>, <code>findConnection()</code>, <code>CONNECTION_STATUS_SQL</code>, <code>notify()</code>, <code>CAN_POST_JOBS</code>, <code>CAN_CREATE_EVENTS</code>, <code>CAN_MENTOR</code>, <code>JOB_TYPES</code>, <code>EVENT_TYPES</code>, <code>DOMAIN_RULE</code>, <code>normalizeDomain()</code>.</li><li>Used by connections, mentorship, messages, profiles, events, jobs and platform routes.</li><li>Gotcha: <code>CONNECTION_STATUS_SQL</code> assumes the query aliases the connection join as <code>c</code> and binds <code>@me</code>.</li></ul></div></details><details><summary><span class="path">lib/rate-limit.js</span></summary><div class="body"><ul><li><code>rateLimit(key, { limit, windowMs })</code> fixed window in a <code>Map</code>; sweeps expired buckets when the map exceeds 10,000 keys. <code>clientIp()</code> reads <code>x-forwarded-for</code>, then <code>x-real-ip</code>, else <code>&quot;local&quot;</code>.</li><li>Gotcha: successful attempts count too, and the IP comes from a client-controlled header (verified bypass).</li></ul></div></details><p>**<code>lib/format.js</code>** (server and client)</p><ul><li><code>parseDate()</code> treats SQLite <code>YYYY-MM-DD HH:MM:SS</code> as UTC; <code>timeAgo</code>, <code>formatDate</code>, <code>formatDateTime</code>, <code>initials</code>, <code>ROLE_LABELS</code>, <code>JOB_TYPE_LABELS</code>, <code>EVENT_TYPE_LABELS</code>.</li><li>Gotcha: two timestamp formats coexist: <code>datetime('now')</code> (space, no zone) for <code>created_at</code>, ISO-8601 with <code>Z</code> for <code>events.starts_at</code>. Comparisons only ever compare like with like.</li></ul><h3>Route handlers (<code>app/api</code>)</h3><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>auth/login/route.js</code></li><li><strong>Handlers:</strong> POST</li><li><strong>Notes:</strong> Rate limit, dummy-hash compare, 401/403, sets cookie, returns <code>redirect</code></li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>auth/register/route.js</code></li><li><strong>Handlers:</strong> POST</li><li><strong>Notes:</strong> Students and alumni only; active college; email must be the college domain or a subdomain; 409 if taken; signs in immediately</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>auth/logout/route.js</code></li><li><strong>Handlers:</strong> POST</li><li><strong>Notes:</strong> Sets an empty cookie with max-age 0; not wrapped in <code>handler()</code></li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>auth/password/route.js</code></li><li><strong>Handlers:</strong> PUT</li><li><strong>Notes:</strong> 5 per 15 min per user; verifies current password (422 if wrong)</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>colleges/route.js</code></li><li><strong>Handlers:</strong> GET</li><li><strong>Notes:</strong> Public; active colleges for the sign-up form</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>profiles/route.js</code></li><li><strong>Handlers:</strong> GET</li><li><strong>Notes:</strong> Directory search, pagination, filter values</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>profiles/me/route.js</code></li><li><strong>Handlers:</strong> GET, PUT</li><li><strong>Notes:</strong> Partial update; builds <code>SET</code> from whitelisted keys; only alumni/faculty may set <code>open_to_mentor</code>; skills capped at 15</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>profiles/[id]/route.js</code></li><li><strong>Handlers:</strong> GET</li><li><strong>Notes:</strong> Private profile -&gt; 404 unless self/connected/admin; email stripped unless self/connected/admin</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>connections/route.js</code></li><li><strong>Handlers:</strong> GET, POST</li><li><strong>Notes:</strong> Lists accepted/incoming/outgoing (active users only); POST with mutual auto-accept</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>connections/[id]/route.js</code></li><li><strong>Handlers:</strong> PATCH, DELETE</li><li><strong>Notes:</strong> Accept (addressee only, 409 otherwise); DELETE covers decline, withdraw and remove</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>messages/route.js</code></li><li><strong>Handlers:</strong> GET</li><li><strong>Notes:</strong> Conversation list via CTE: latest message per partner + unread count</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>messages/[userId]/route.js</code></li><li><strong>Handlers:</strong> GET, POST</li><li><strong>Notes:</strong> Thread with <code>?after=</code> cursor, marks read; POST only to accepted connections</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>jobs/route.js</code></li><li><strong>Handlers:</strong> GET, POST</li><li><strong>Notes:</strong> Search, type, remote, mine, open/closed; POST for <code>CAN_POST_JOBS</code></li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>jobs/[id]/route.js</code></li><li><strong>Handlers:</strong> PATCH, DELETE</li><li><strong>Notes:</strong> Poster or same-college admin</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>events/route.js</code></li><li><strong>Handlers:</strong> GET, POST</li><li><strong>Notes:</strong> <code>when=upcoming|past|going</code>; computed <code>rsvp_count</code>, <code>is_going</code>, <code>can_manage</code>; POST requires future start</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>events/[id]/route.js</code></li><li><strong>Handlers:</strong> DELETE</li><li><strong>Notes:</strong> Organizer or admin; notifies attendees in a transaction, then deletes (RSVPs cascade)</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>events/[id]/rsvp/route.js</code></li><li><strong>Handlers:</strong> POST, DELETE</li><li><strong>Notes:</strong> Capacity check + insert in one transaction; 409 if started</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>mentorship/route.js</code></li><li><strong>Handlers:</strong> GET, POST</li><li><strong>Notes:</strong> Mentor list with your latest active request status; POST requires <code>open_to_mentor</code> and no active request</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>mentorship/[id]/route.js</code></li><li><strong>Handlers:</strong> PATCH</li><li><strong>Notes:</strong> <code>TRANSITIONS</code> state machine; accept also connects the pair</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>notifications/route.js</code></li><li><strong>Handlers:</strong> GET, PATCH</li><li><strong>Notes:</strong> Latest 100; PATCH <code>{ids}</code> marks some (max 100), <code>{}</code> marks all</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>summary/route.js</code></li><li><strong>Handlers:</strong> GET</li><li><strong>Notes:</strong> Nav badge counts; joins <code>users</code> so requests and messages from deactivated users are not counted</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>admin/users/route.js</code></li><li><strong>Handlers:</strong> GET, POST</li><li><strong>Notes:</strong> Search members of own college; provision accounts (any of the 4 college roles)</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>admin/users/[id]/route.js</code></li><li><strong>Handlers:</strong> PATCH</li><li><strong>Notes:</strong> <code>is_active</code>, <code>role</code>; not yourself; same college</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>platform/colleges/route.js</code></li><li><strong>Handlers:</strong> GET, POST</li><li><strong>Notes:</strong> All colleges with member counts and admins; create college with normalised domain</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>platform/colleges/[id]/route.js</code></li><li><strong>Handlers:</strong> PATCH</li><li><strong>Notes:</strong> Rename, change domain (409 on clash), activate/deactivate</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Route file:</strong> <code>platform/colleges/[id]/admins/route.js</code></li><li><strong>Handlers:</strong> POST</li><li><strong>Notes:</strong> Promote an existing member of that college or create a new admin account</li><li><strong>:</strong> </li></ul></div></details><h3>Database</h3><details><summary><span class="path">database/schema.sql</span></summary><div class="body"><p>10 tables, 10 indexes, all <code>CREATE ... IF NOT EXISTS</code>. Key constraints: <code>users.email UNIQUE COLLATE NOCASE</code>; <code>CHECK ((role = 'superadmin') = (college_id IS NULL))</code>; <code>connections UNIQUE (requester_id, addressee_id)</code> and <code>CHECK (requester_id &lt;&gt; addressee_id)</code>; <code>event_rsvps PRIMARY KEY (event_id, user_id)</code>; status <code>CHECK</code>s on connections, jobs, mentorship; <code>ON DELETE CASCADE</code> everywhere.</p></div></details><details><summary><span class="path">database/init.js</span></summary><div class="body"><p>CommonJS so both Next.js and <code>scripts/db-reset.js</code> can load it. <code>openDatabase()</code> creates the directory, sets <code>journal_mode = WAL</code>, <code>foreign_keys = ON</code>, <code>busy_timeout = 5000</code>, refuses an outdated schema, applies <code>schema.sql</code>, and seeds when <code>colleges</code> is empty unless <code>SEED_DEMO_DATA=false</code>.</p></div></details><details><summary><span class="path">database/seed.js</span></summary><div class="body"><p>3 colleges (Riverside inactive), 21 users across 5 roles, connections, messages, jobs, 6 events (the career fair is full at capacity 3), mentorship requests in every status, notifications. One bcrypt hash reused for all demo accounts. All in one transaction.</p></div></details><details><summary><span class="path">scripts/db-reset.js</span></summary><div class="body"><p>deletes the DB and its <code>-wal</code> / <code>-shm</code> files, reopens (which re-seeds), prints the user count.</p></div></details><h3>Shell</h3><details><summary><span class="path">app/layout.js</span></summary><div class="body"><p>root HTML, IBM Plex Sans/Mono via <code>next/font/google</code>, wraps everything in <code>ToastProvider</code>.</p></div></details><details><summary><span class="path">app/dashboard/layout.js</span></summary><div class="body"><p>server component; <code>getCurrentUser()</code> or <code>redirect(&quot;/login&quot;)</code>. This second check catches deactivated accounts whose JWT middleware still accepts.</p></div></details><details><summary><span class="path">components/AppNav.js</span></summary><div class="body"><p>client sidebar. Chooses links by role (superadmin sees only Colleges; admin gets Admin). Polls <code>/api/summary</code> every 20 s and on route change (skipped for superadmins). Logout posts <code>/api/auth/logout</code>, then <code>router.replace(&quot;/login&quot;)</code> and <code>router.refresh()</code>.</p></div></details><h3>Shared client helpers and components</h3><details><summary><span class="path">lib/client.js</span></summary><div class="body"><p><code>api(path, { method, body })</code> throws <code>ApiError(status, message, details)</code>; on 401 outside <code>/api/auth/*</code> it redirects to <code>/login?next=&lt;current path&gt;</code>.</p></div></details><details><summary><span class="path">lib/hooks.js</span></summary><div class="body"><p><code>useApi(path)</code> returns <code>{ data, error, loading, reload }</code>; <code>useDebounce(value, 300)</code>.</p></div></details><details><summary><span class="path">components/ui.js</span></summary><div class="body"><p><code>EmptyState</code>, <code>ErrorState</code> (with retry), <code>SkeletonList</code>, <code>Field</code> (label + error/hint), <code>Pagination</code>.</p></div></details><details><summary><span class="path">components/ConnectButton.js</span></summary><div class="body"><p>renders Connect / Accept request / Request sent / Message from <code>connection_status</code>. &quot;Accept request&quot; calls the same POST, relying on the server's mutual-accept logic.</p></div></details><p>**<code>components/MentorshipRequestModal.js</code><strong>, </strong><code>components/Modal.js</code>** (Escape to close, backdrop click, body scroll lock, <code>role=&quot;dialog&quot;</code>), **<code>components/Toast.js</code>** (context, 3.5 s auto-dismiss, <code>aria-live=&quot;polite&quot;</code>), **<code>components/Avatar.js</code><strong> (initials, strips &quot;Dr&quot;/&quot;Prof&quot;), </strong><code>components/Logo.js</code>**.</p><h3>Pages</h3><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Page:</strong> <code>app/page.js</code></li><li><strong>Type:</strong> Server</li><li><strong>Talks to:</strong> <code>getCurrentUser()</code></li><li><strong>Gotcha:</strong> <code>dynamic = &quot;force-dynamic&quot;</code>; signed-in users are redirected</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Page:</strong> <code>app/login/page.js</code></li><li><strong>Type:</strong> Client</li><li><strong>Talks to:</strong> <code>/api/auth/login</code></li><li><strong>Gotcha:</strong> <code>safeNext()</code>; hard-coded demo accounts shown in every environment</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Page:</strong> <code>app/register/page.js</code></li><li><strong>Type:</strong> Client</li><li><strong>Talks to:</strong> <code>/api/colleges</code>, <code>/api/auth/register</code></li><li><strong>Gotcha:</strong> Goes to <code>/dashboard/profile?welcome=1</code> on success</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Page:</strong> <code>app/dashboard/page.js</code></li><li><strong>Type:</strong> Server</li><li><strong>Talks to:</strong> SQL directly</li><li><strong>Gotcha:</strong> &quot;Needs your attention&quot; merges three queries and sorts by <code>created_at</code> string</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Page:</strong> <code>dashboard/directory/page.js</code></li><li><strong>Type:</strong> Client</li><li><strong>Talks to:</strong> <code>/api/profiles</code></li><li><strong>Gotcha:</strong> Debounced search; resets to page 1 on filter change</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Page:</strong> <code>dashboard/connections/page.js</code></li><li><strong>Type:</strong> Client</li><li><strong>Talks to:</strong> <code>/api/connections</code>, <code>/api/connections/[id]</code></li><li><strong>Gotcha:</strong> Decline/withdraw/remove are all DELETE</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Page:</strong> <code>dashboard/messages/page.js</code></li><li><strong>Type:</strong> Client</li><li><strong>Talks to:</strong> <code>/api/messages*</code></li><li><strong>Gotcha:</strong> Three polling timers in total with the nav</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Page:</strong> <code>dashboard/jobs/page.js</code></li><li><strong>Type:</strong> Client</li><li><strong>Talks to:</strong> <code>/api/jobs*</code></li><li><strong>Gotcha:</strong> Post form in a modal; owner sees close/reopen/delete</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Page:</strong> <code>dashboard/events/page.js</code></li><li><strong>Type:</strong> Client</li><li><strong>Talks to:</strong> <code>/api/events*</code></li><li><strong>Gotcha:</strong> Converts <code>datetime-local</code> to ISO before sending; disables RSVP when full</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Page:</strong> <code>dashboard/mentorship/page.js</code></li><li><strong>Type:</strong> Client</li><li><strong>Talks to:</strong> <code>/api/mentorship*</code></li><li><strong>Gotcha:</strong> Actions map 1:1 to <code>TRANSITIONS</code></li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Page:</strong> <code>dashboard/notifications/page.js</code></li><li><strong>Type:</strong> Client</li><li><strong>Talks to:</strong> <code>/api/notifications</code></li><li><strong>Gotcha:</strong> Clicking marks read then <code>router.push(link)</code></li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Page:</strong> <code>dashboard/profile/page.js</code></li><li><strong>Type:</strong> Client</li><li><strong>Talks to:</strong> <code>/api/profiles/me</code></li><li><strong>Gotcha:</strong> Strips <code>open_to_mentor</code> for roles that cannot mentor; the initial fetch has no <code>.catch</code>, so a failure leaves the skeleton showing</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Page:</strong> <code>dashboard/people/[id]/page.js</code></li><li><strong>Type:</strong> Client</li><li><strong>Talks to:</strong> <code>/api/profiles/[id]</code></li><li><strong>Gotcha:</strong> Uses React <code>use(params)</code></li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Page:</strong> <code>dashboard/settings/page.js</code></li><li><strong>Type:</strong> Client</li><li><strong>Talks to:</strong> <code>/api/auth/password</code></li><li><strong>Gotcha:</strong> Confirm-password check is client-side only</li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Page:</strong> <code>dashboard/admin/page.js</code> + <code>UserManagement.js</code></li><li><strong>Type:</strong> Server + client</li><li><strong>Talks to:</strong> SQL; <code>/api/admin/users*</code></li><li><strong>Gotcha:</strong> Server page re-checks <code>me.role !== &quot;admin&quot;</code></li><li><strong>:</strong> </li></ul></div></details><details><summary><span class="path"></span></summary><div class="body"><ul><li><strong>Page:</strong> <code>dashboard/platform/page.js</code> + <code>CollegesTable.js</code></li><li><strong>Type:</strong> Server + client</li><li><strong>Talks to:</strong> SQL; <code>/api/platform/colleges*</code></li><li><strong>Gotcha:</strong> <code>router.refresh()</code> after changes to update server-rendered stats</li><li><strong>:</strong> </li></ul></div></details><p>Styling: <code>app/globals.css</code> holds design tokens (neutral scale <code>--n-*</code>, <code>--accent: #1f6f5c</code>, spacing <code>--s*</code>) and utility classes; CSS Modules for nav, layout, landing and messages.</p>
+</section>
+
+<section class="chapter" id="file-map">
+  <div class="eyebrow"></div>
+  <h2>File map</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Concern</th><th>File</th></tr></thead>
+    <tbody><tr><td></td><td>Auth gate, headers</td></tr><tr><td></td><td>JWT sign/verify, cookie</td></tr><tr><td></td><td>Current user, roles</td></tr><tr><td></td><td>DB handle, transactions</td></tr><tr><td></td><td>Error envelope, ids, pagination</td></tr><tr><td></td><td>Validation, password rules</td></tr><tr><td></td><td>Same-college lookup, notify, role lists</td></tr><tr><td></td><td>Rate limiting</td></tr><tr><td></td><td>Login</td></tr><tr><td></td><td>Connections + mutual accept</td></tr><tr><td></td><td>RSVP capacity</td></tr><tr><td></td><td>Mentorship state machine</td></tr><tr><td></td><td>Chat thread + polling cursor</td></tr><tr><td></td><td>Nav badges</td></tr><tr><td></td><td>College admin</td></tr><tr><td></td><td>Platform admin</td></tr><tr><td></td><td>Schema, boot, seed</td></tr><tr><td></td><td>Smoke checks</td></tr></tbody>
+  </table></div>
+</section>
+
+<section class="chapter" id="api">
+  <div class="eyebrow"></div>
+  <h2>API surface and data shapes</h2>
+  <p>26 route files, 38 handlers. Public without a session: <code>POST /api/auth/login</code>, <code>POST /api/auth/register</code>, <code>POST /api/auth/logout</code>, <code>GET /api/colleges</code>.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Route</th><th>Methods</th><th>Who</th><th>Body / query</th><th>Returns</th></tr></thead>
+    <tbody>
+      <tr><td><code>/api/auth/login</code></td><td>POST</td><td>anyone</td><td><code>{email, password}</code></td><td><code>{user:{id,role}, redirect}</code> + cookie</td></tr>
+      <tr><td><code>/api/auth/register</code></td><td>POST</td><td>anyone</td><td><code>{full_name, email, password, role: student|alumni, college_id, graduation_year, department?}</code></td><td>201 <code>{user}</code> + cookie</td></tr>
+      <tr><td><code>/api/auth/logout</code></td><td>POST</td><td>anyone</td><td>none</td><td><code>{ok}</code>, clears cookie</td></tr>
+      <tr><td><code>/api/auth/password</code></td><td>PUT</td><td>signed in</td><td><code>{current_password, new_password}</code></td><td><code>{ok}</code></td></tr>
+      <tr><td><code>/api/colleges</code></td><td>GET</td><td>anyone</td><td>none</td><td><code>{colleges:[{id,name,domain}]}</code></td></tr>
+      <tr><td><code>/api/profiles</code></td><td>GET</td><td>member</td><td><code>q, role, year, department, mentors=1, page, limit</code></td><td><code>{profiles, pagination, filters}</code></td></tr>
+      <tr><td><code>/api/profiles/me</code></td><td>GET, PUT</td><td>member</td><td>partial profile fields</td><td><code>{profile}</code></td></tr>
+      <tr><td><code>/api/profiles/[id]</code></td><td>GET</td><td>member</td><td>none</td><td><code>{profile}</code> with <code>connection_status</code>, email only if allowed</td></tr>
+      <tr><td><code>/api/connections</code></td><td>GET, POST</td><td>member</td><td><code>{user_id}</code></td><td><code>{connections, incoming, outgoing}</code> / 201 <code>{connection}</code></td></tr>
+      <tr><td><code>/api/connections/[id]</code></td><td>PATCH, DELETE</td><td>either party</td><td><code>{action:"accept"}</code></td><td><code>{connection}</code> / <code>{ok}</code></td></tr>
+      <tr><td><code>/api/messages</code></td><td>GET</td><td>member</td><td>none</td><td><code>{conversations:[{user_id, last_message, unread, ...}]}</code></td></tr>
+      <tr><td><code>/api/messages/[userId]</code></td><td>GET, POST</td><td>member</td><td><code>?after=id</code> / <code>{body}</code></td><td><code>{user, canMessage, messages}</code> / 201 <code>{message}</code></td></tr>
+      <tr><td><code>/api/jobs</code></td><td>GET, POST</td><td>member / alumni, faculty, admin</td><td><code>q, type, remote, mine, status, page</code> / job fields</td><td><code>{jobs, canPost, pagination}</code></td></tr>
+      <tr><td><code>/api/jobs/[id]</code></td><td>PATCH, DELETE</td><td>poster or admin</td><td><code>{status: open|closed}</code></td><td><code>{job}</code> / <code>{ok}</code></td></tr>
+      <tr><td><code>/api/events</code></td><td>GET, POST</td><td>member / alumni, faculty, admin</td><td><code>when=upcoming|past|going</code> / event fields</td><td><code>{events, canCreate}</code></td></tr>
+      <tr><td><code>/api/events/[id]</code></td><td>DELETE</td><td>organizer or admin</td><td>none</td><td><code>{ok}</code>, notifies attendees</td></tr>
+      <tr><td><code>/api/events/[id]/rsvp</code></td><td>POST, DELETE</td><td>member</td><td>none</td><td><code>{is_going, rsvp_count}</code></td></tr>
+      <tr><td><code>/api/mentorship</code></td><td>GET, POST</td><td>member</td><td><code>{mentor_id, topic, message}</code></td><td><code>{mentors, incoming, outgoing, canMentor, isMentor}</code></td></tr>
+      <tr><td><code>/api/mentorship/[id]</code></td><td>PATCH</td><td>mentor or mentee</td><td><code>{action: accept|decline|complete|cancel}</code></td><td><code>{request:{id,status}}</code></td></tr>
+      <tr><td><code>/api/notifications</code></td><td>GET, PATCH</td><td>member</td><td><code>unread=1</code> / <code>{ids?}</code></td><td><code>{notifications, unread}</code> / <code>{ok}</code></td></tr>
+      <tr><td><code>/api/summary</code></td><td>GET</td><td>member</td><td>none</td><td><code>{notifications, messages, connections}</code></td></tr>
+      <tr><td><code>/api/admin/users</code></td><td>GET, POST</td><td>college admin</td><td><code>q, role, status, page</code> / <code>{full_name, email, role, password}</code></td><td><code>{users, pagination}</code> / 201 <code>{user}</code></td></tr>
+      <tr><td><code>/api/admin/users/[id]</code></td><td>PATCH</td><td>college admin</td><td><code>{is_active?, role?}</code></td><td><code>{user}</code></td></tr>
+      <tr><td><code>/api/platform/colleges</code></td><td>GET, POST</td><td>superadmin</td><td><code>{name, domain}</code></td><td><code>{colleges}</code> with counts and admins</td></tr>
+      <tr><td><code>/api/platform/colleges/[id]</code></td><td>PATCH</td><td>superadmin</td><td><code>{name?, domain?, is_active?}</code></td><td><code>{college}</code></td></tr>
+      <tr><td><code>/api/platform/colleges/[id]/admins</code></td><td>POST</td><td>superadmin</td><td><code>{email, full_name?, password?}</code></td><td><code>{admin:{id,email,promoted}}</code></td></tr>
+    </tbody>
+  </table></div>
+  <h3>Error shape</h3>
+<pre><code>// 422 from validate()
+{ "error": "Enter a valid email address", "details": { "email": "Enter a valid email address" } }
+// 409 from a business rule
+{ "error": "This event is full" }</code></pre>
+  <h3>Key tables</h3>
+<pre><code>users(id, college_id NULL only for superadmin, email UNIQUE NOCASE, password_hash,
+      role IN (student, alumni, faculty, admin, superadmin), is_active, created_at, last_login_at,
+      CHECK ((role = 'superadmin') = (college_id IS NULL)))
+connections(id, requester_id, addressee_id, status IN (pending, accepted), created_at, responded_at,
+            UNIQUE (requester_id, addressee_id), CHECK (requester_id &lt;&gt; addressee_id))
+event_rsvps(event_id, user_id, created_at, PRIMARY KEY (event_id, user_id))
+mentorship_requests(id, mentee_id, mentor_id, topic, message,
+                    status IN (pending, accepted, declined, completed), created_at, responded_at)</code></pre>
+</section>
+
+<section class="chapter" id="numbers">
+  <div class="eyebrow"></div>
+  <h2>The numbers and how to read them</h2>
+  <div class="cards">
+    <div class="card"><span class="stat">52</span><p>end-to-end checks in <code>docs/smoke-check.mjs</code></p></div>
+    <div class="card"><span class="stat">52 / 0</span><p>pass / fail. Two began as failing probes that exposed real bugs, now fixed</p></div>
+    <div class="card"><span class="stat">1 of 5</span><p>concurrent RSVPs to a capacity-1 event succeeded; 4 got 409</p></div>
+    <div class="card"><span class="stat">26 / 38</span><p>route files / exported HTTP handlers</p></div>
+    <div class="card"><span class="stat">16</span><p>pages</p></div>
+    <div class="card"><span class="stat">10 / 10</span><p>tables / indexes</p></div>
+    <div class="card"><span class="stat">0</span><p>lint warnings (<code>npm run lint</code>)</p></div>
+    <div class="card"><span class="stat">103 kB</span><p>shared first-load JS; middleware 40.1 kB (<code>next build</code>)</p></div>
+  </div>
+  <div class="callout warn"><span class="label">How to read them</span><p>One sequential script on one process and a fresh seeded database. It proves permission boundaries and business rules. It says nothing about load, multiple instances, the UI or PostgreSQL. There is no test suite, benchmark or CI in the repository.</p></div>
+  <div class="callout bad"><span class="label">Do not quote</span><p>"140 end-to-end checks" from <code>INTERVIEW_NOTES.md</code>. No script or output for it exists in the repo.</p></div>
+</section>
+
+<section class="chapter" id="bugs">
+  <div class="eyebrow"></div>
+  <h2>Bug stories</h2>
+  <p><strong>Fake persistence in the original code.</strong></p><ul><li>Situation: settings and password forms showed success toasts.</li><li>Root cause: <code>setTimeout</code> stubs instead of API calls (<code>app/dashboard/settings/page.js</code> at <code>efc62ee</code>).</li><li>Fix: real route handlers plus <code>lib/client.js</code> <code>api()</code> in commit <code>dece944</code>.</li><li>Lesson: a green toast is not evidence; check the network tab and the database.</li></ul><p><strong>Two databases pretending to be one.</strong></p><ul><li>Situation: <code>lib/db.js</code> translated PostgreSQL <code>$1</code> placeholders to <code>?</code> with a regex, <code>lib/sqlite-db.js</code> had its own inline schema, <code>database/schema.sql</code> another, and <code>src/pages/Server.js</code> was an Express + MongoDB server.</li><li>Fix: one schema, one <code>openDatabase()</code>, one thin <code>lib/db.js</code>; legacy <code>src/</code> deleted.</li><li>Lesson: cut scope to something coherent before adding features.</li></ul><p><strong>A user with no college.</strong></p><ul><li>Situation: adding the platform admin.</li><li>Root cause: <code>users.college_id NOT NULL</code> and an inner <code>JOIN colleges</code> in <code>getCurrentUser()</code>.</li><li>Fix (<code>f5f0e52</code>): nullable <code>college_id</code> with a CHECK tying it to <code>superadmin</code>, <code>LEFT JOIN</code> plus <code>(u.role = 'superadmin' OR c.is_active = 1)</code>, and an out-of-date-schema guard in <code>database/init.js</code> because SQLite cannot alter CHECK constraints.</li><li>Lesson: a new role is a data-model change, not a new string in an enum.</li></ul><p><strong>JWT library vs Edge runtime.</strong></p><ul><li>Root cause: <code>jsonwebtoken</code> needs Node crypto; middleware runs on Edge.</li><li>Fix: <code>jose</code> in <code>lib/auth.js</code>.</li><li>Lesson: know which runtime each file runs in.</li></ul><p><strong>Nav badge vs Connections page (found and fixed while documenting).</strong></p><ul><li>Situation: after deactivating a user who had a pending request, the badge said 1 and the Connections page said 0.</li><li>Root cause: <code>app/api/summary/route.js</code> did not join <code>users.is_active</code>, unlike <code>app/api/connections/route.js</code>.</li><li>Fix: both badge sub-counts (requests and unread messages) now join the other user and require <code>is_active = 1</code>.</li><li>Lesson: two queries for the same concept drift; write a check that compares them.</li></ul><p><strong>Promoted admins locked out (found and fixed while documenting).</strong></p><ul><li>Situation: a member promoted to admin got 403 on <code>/api/admin/users</code> until they logged in again.</li><li>Root cause: <code>middleware.js</code> gated admin routes on the role inside the JWT, which only changes at login.</li><li>Fix: removed that gate; <code>requireRole(&quot;admin&quot;)</code> in each handler and the role check in <code>app/dashboard/admin/page.js</code> decide, against the database. Platform routes keep their gate because nobody can be promoted to superadmin.</li><li>Lesson: middleware should authenticate; authorization belongs where the current data is.</li></ul>
+</section>
+
+<section class="chapter" id="tests">
+  <div class="eyebrow"></div>
+  <h2>Tests</h2>
+  <p>No test suite, no <code>test</code> script, no CI. <code>npm run lint</code> passes. This session added <code>docs/smoke-check.mjs</code> (run against a production build on a fresh DB).</p>
+  <div class="cards">
+    <div class="card"><h3>What it proves</h3><p>401/redirect, headers, cookie flags, 400/422 validation, cross-college 404, role 403, superadmin confinement, capacity under concurrency, mentorship 403/409, mutual accept, connection-only messaging, LIKE escaping, revocation on deactivation, registration rules, URL validation, login limiter.</p></div>
+    <div class="card"><h3>What it cannot see</h3><p>The UI, multiple instances, load, PostgreSQL, the duplicate-email registration race. It mutates data and is order-dependent: a smoke check, not a regression suite.</p></div>
+  </div>
+</section>
+
+<section class="chapter" id="security">
+  <div class="eyebrow"></div>
+  <h2>Security checklist</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Control</th><th>Status</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td>Password hashing</td><td>Yes, bcrypt cost 10; 8-72 chars, letter + digit</td><td>auth routes, <code>lib/validation.js</code></td></tr>
+      <tr><td>httpOnly, SameSite=Lax, Secure cookie</td><td>Yes (verified flags)</td><td><code>lib/auth.js</code></td></tr>
+      <tr><td>Secret required in production, &gt;= 32 chars</td><td>Yes</td><td><code>getSecret()</code></td></tr>
+      <tr><td>Algorithm pinned on verify</td><td>Yes, HS256</td><td><code>verifySession()</code></td></tr>
+      <tr><td>Immediate revocation on deactivation</td><td>Yes (verified)</td><td><code>lib/session.js</code></td></tr>
+      <tr><td>Tenant isolation, 404 across colleges</td><td>Yes (verified)</td><td><code>getColleague()</code>, college filters</td></tr>
+      <tr><td>Parameterised SQL, LIKE escaping</td><td>Yes (verified <code>%</code>)</td><td><code>lib/db.js</code>, routes</td></tr>
+      <tr><td>Timing-equalised login</td><td>Yes</td><td><code>DUMMY_HASH</code></td></tr>
+      <tr><td>Open-redirect guard</td><td>Yes</td><td><code>safeNext()</code></td></tr>
+      <tr><td>http(s)-only profile URLs</td><td>Yes (verified)</td><td><code>validate()</code> url type</td></tr>
+      <tr><td>Security headers</td><td>4 headers (verified)</td><td><code>withSecurityHeaders()</code></td></tr>
+      <tr><td>Rate limiting</td><td>Partial: IP from <code>X-Forwarded-For</code> is spoofable (verified)</td><td><code>lib/rate-limit.js</code></td></tr>
+      <tr><td>Session revocation on logout/password change</td><td>No (verified)</td><td>would need <code>token_version</code></td></tr>
+      <tr><td>Content-Security-Policy</td><td>No (verified absent)</td><td>middleware</td></tr>
+      <tr><td>CSRF token / Origin check</td><td>No, relies on SameSite=Lax</td><td>middleware</td></tr>
+      <tr><td>Email verification, password reset</td><td>No</td><td>not built</td></tr>
+      <tr><td>Demo credentials off in production</td><td>No: seed includes a platform admin with a published password</td><td><code>database/seed.js</code>, <code>login/page.js</code></td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout bad"><span class="label">Riskiest probe</span><p>"JWTs can't be revoked, so how do you log someone out everywhere?" Answer honestly: deactivation is immediate because the DB is re-checked, but logout and password change are not; a <code>token_version</code> column would close it.</p></div>
+</section>
+
+<section class="chapter" id="weak">
+  <div class="eyebrow"></div>
+  <h2>What is still weak</h2>
+  <div class="callout warn"><span class="label">Say these before they ask</span>
+  <ol>
+    <li><strong>Spoofable rate-limit IP</strong> (verified): new <code>X-Forwarded-For</code> resets the login limit.</li>
+    <li><strong>No session revocation</strong> (verified): old token valid after password change.</li>
+    <li><strong>Registration race</strong> (by reading): duplicate email at the same instant returns 500, not 409.</li>
+    <li><strong>No tests or CI</strong> in the repo.</li>
+    <li><strong>Single process</strong>: SQLite file and in-memory limiter; Render free tier resets data on restart.</li>
+    <li><strong>Polling</strong>: up to 4 s latency, about 22 requests per minute with a chat open.</li>
+    <li><strong>GET with side effects</strong>: opening a thread marks messages read.</li>
+    <li><strong>Public demo platform admin</strong> wherever demo data is seeded.</li>
+  </ol></div>
+</section>
+
+<section class="chapter" id="stale">
+  <div class="eyebrow"></div>
+  <h2>Corrections to your prep sheet and stale spots</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Where</th><th>Claim</th><th>Reality</th></tr></thead>
+    <tbody>
+      <tr><td><code>INTERVIEW_NOTES.md</code></td><td>"140 end-to-end checks, all passing"</td><td>No artifact in the repo (UNVERIFIED). Use 52 checks, all passing.</td></tr>
+      <tr><td><code>INTERVIEW_NOTES.md</code></td><td>"revocation is immediate"</td><td>True for deactivation; false for logout and password change.</td></tr>
+      <tr><td><code>INTERVIEW_NOTES.md</code></td><td>Next.js upgrade fixed "critical CVEs (including a Windows RCE)"</td><td>Upgrade 14 to 15 is in git history; the CVE claim is UNVERIFIED.</td></tr>
+      <tr><td><code>README.md</code> line 25, <code>package.json</code> engines</td><td>Node 18.18+</td><td><code>better-sqlite3</code> 12.5 needs Node 20-25; Render uses 22.</td></tr>
+      <tr><td><code>README.md</code> line 11</td><td>"every query is scoped to the user's college"</td><td>College tables yes; social tables by user id; platform queries global.</td></tr>
+      <tr><td><code>README.md</code> line 13</td><td>Email shown only to connections</td><td>Also to admins.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="chapter" id="run">
+  <div class="eyebrow"></div>
+  <h2>Run it, poke it, debug it</h2>
+  <p>Setup and run (verified on Node 22.14):</p><div class="cmd"><pre><code>npm install</code></pre><button class="btn copy" type="button">Copy</button></div><div class="cmd"><pre><code>npm run dev</code></pre><button class="btn copy" type="button">Copy</button></div><p>Open http://localhost:3000 and use a demo button. All demo passwords are <code>Password123!</code>.</p><p>Lint (verified, exit 0):</p><div class="cmd"><pre><code>npm run lint</code></pre><button class="btn copy" type="button">Copy</button></div><p>Fresh demo data (deletes your local DB):</p><div class="cmd"><pre><code>npm run db:reset</code></pre><button class="btn copy" type="button">Copy</button></div><p>Production build into a separate folder so it does not disturb a running dev server (verified):</p><div class="cmd"><pre><code>NEXT_DIST_DIR=.next-check npx next build</code></pre><button class="btn copy" type="button">Copy</button></div><p>Serve that build on a throwaway database (verified with a temp-folder path; on Windows use a path under <code>%TEMP%</code> instead of <code>/tmp</code>):</p><div class="cmd"><pre><code>NEXT_DIST_DIR=.next-check DATABASE_PATH=/tmp/ac-check.db JWT_SECRET=0123456789abcdef0123456789abcdef npx next start -p 3457</code></pre><button class="btn copy" type="button">Copy</button></div><p>Reproduce the published smoke numbers in a second terminal (verified; needs a fresh DB each run):</p><div class="cmd"><pre><code>node docs/smoke-check.mjs</code></pre><button class="btn copy" type="button">Copy</button></div><p>No-server smoke checks:</p><div class="cmd"><pre><code>node -e &quot;const p=require('path').join(require('os').tmpdir(),'ac-peek.db');const db=require('./database/init').openDatabase(p);console.log(db.prepare('SELECT role, COUNT(*) n FROM users GROUP BY role').all())&quot;</code></pre><button class="btn copy" type="button">Copy</button></div><div class="cmd"><pre><code>curl -s -X POST localhost:3000/api/auth/login -H &quot;Content-Type: application/json&quot; -d &quot;{\&quot;email\&quot;:\&quot;x\&quot;,\&quot;password\&quot;:\&quot;y\&quot;}&quot;</code></pre><button class="btn copy" type="button">Copy</button></div><p>The first prints the seeded users per role without starting a server (admin 2, alumni 12, faculty 1, student 5, superadmin 1; verified). The second, with <code>npm run dev</code> running, should print a 422 body with <code>details.email</code>. </p>
+  <div class="callout"><span class="label">Debug tips</span><p>Route errors log as <code>[api] METHOD /path</code>. If everything bounces to <code>/login</code> in production, <code>JWT_SECRET</code> is missing or short (the error is swallowed in <code>verifySession()</code>). "Database schema is out of date" means run <code>npm run db:reset</code>.</p></div>
+</section>
+
+<section class="chapter" id="glossary">
+  <div class="eyebrow"></div>
+  <h2>Concepts and vocabulary</h2>
+  <dl class="gloss"><dt></dt><dd><code>app/api/**/route.js</code> Where: Next.js App Router route handlers. Why: Files exporting <code>GET</code>/<code>POST</code>/... functions become HTTP endpoints</dd><dt></dt><dd><code>app/dashboard/page.js</code> (server) vs <code>directory/page.js</code> (<code>&quot;use client&quot;</code>) Where: Server vs client components. Why: Server components render on the server and can read the DB; client components run in the browser</dd><dt></dt><dd><code>middleware.js</code> Where: Edge middleware. Why: Code that runs before routing on a restricted runtime</dd><dt></dt><dd><code>lib/auth.js</code> Where: JWT (HS256). Why: Signed, self-contained token with claims and expiry</dd><dt></dt><dd><code>sessionCookieOptions()</code> Where: httpOnly / SameSite cookies. Why: Cookie flags hiding the token from JS and from cross-site requests</dd><dt></dt><dd>auth routes, <code>database/seed.js</code> Where: bcrypt. Why: Slow, salted password hash</dd><dt></dt><dd><code>DUMMY_HASH</code> in <code>auth/login/route.js</code> Where: Timing-safe failure path. Why: Same work for unknown and known emails</dd><dt></dt><dd><code>lib/rate-limit.js</code> Where: Fixed-window rate limiting. Why: Count attempts per key per time window</dd><dt></dt><dd><code>requireRole()</code>, <code>CAN_*</code> lists Where: RBAC. Why: Permissions derived from a role</dd><dt></dt><dd><code>college_id</code> filters, <code>getColleague()</code> Where: Multi-tenancy (shared schema). Why: Many tenants in one database separated by a column</dd><dt></dt><dd><code>getColleague()</code>, profile and event lookups Where: 404-instead-of-403. Why: Hide existence of other tenants' resources</dd><dt></dt><dd><code>lib/db.js</code> helpers Where: Parameterised SQL. Why: Values bound separately from SQL text</dd><dt></dt><dd><code>likeParam()</code> in <code>profiles/route.js</code>, jobs, admin users Where: LIKE escaping. Why: Escape <code>%</code>, <code>_</code>, <code>\</code> and declare <code>ESCAPE</code></dd><dt></dt><dd><code>transaction()</code> in <code>lib/db.js</code> Where: ACID transactions. Why: All-or-nothing group of statements</dd><dt></dt><dd><code>database/init.js</code> Where: WAL journal mode. Why: Write-ahead log so readers don't block the writer</dd><dt></dt><dd>CHECK / UNIQUE / composite PK in <code>schema.sql</code> Where: Constraints as invariants. Why: Database rejects invalid rows</dd><dt></dt><dd><code>CREATE TABLE IF NOT EXISTS</code> Where: Idempotent schema. Why: Safe to re-run on every boot</dd><dt></dt><dd><code>TRANSITIONS</code> in <code>mentorship/[id]/route.js</code> Where: State machine. Why: Table of legal moves</dd><dt></dt><dd><code>validate()</code> Where: Declarative validation. Why: Rules object instead of hand-written checks</dd><dt></dt><dd><code>?after=&lt;id&gt;</code> in <code>messages/[userId]</code> Where: Cursor-based polling. Why: Ask only for rows newer than the last seen id</dd><dt></dt><dd><code>getPagination()</code> Where: Pagination. Why: <code>LIMIT</code>/<code>OFFSET</code> with page and total</dd><dt></dt><dd><code>useDebounce()</code> in <code>lib/hooks.js</code> Where: Debouncing. Why: Wait until typing pauses</dd><dt></dt><dd><code>getCurrentUser</code> Where: React <code>cache()</code>. Why: Per-request memoisation on the server</dd><dt></dt><dd><code>safeNext()</code> in <code>login/page.js</code> Where: Open-redirect guard. Why: Only allow same-site relative paths</dd><dt></dt><dd><code>withSecurityHeaders()</code> Where: Security headers. Why: nosniff, frame deny, referrer and permissions policy</dd><dt></dt><dd><code>is_active</code> on users and colleges Where: Soft delete / deactivation. Why: Disable without deleting rows</dd></dl>
+</section>
+
+<section class="chapter" id="extend">
+  <div class="eyebrow"></div>
+  <h2>How you would extend it</h2>
+  <ol><li><strong>Tests in CI.</strong> Turn <code>docs/smoke-check.mjs</code> into <code>npm test</code> with a temp <code>DATABASE_PATH</code>; Vitest unit tests for <code>validate()</code>, <code>rateLimit()</code>, <code>normalizeDomain()</code>; GitHub Actions running lint, build and tests.</li><li><strong>Session revocation.</strong> <code>users.token_version</code> in the JWT, compared in <code>getCurrentUser()</code>, incremented on password change and &quot;sign out everywhere&quot;.</li><li><strong>Email verification and reset.</strong> <code>email_tokens(user_id, purpose, token_hash, expires_at, used_at)</code>, hashed single-use tokens, a mail provider; block login until verified.</li><li><strong>PostgreSQL + Redis.</strong> Swap <code>lib/db.js</code> for a <code>pg</code> pool, convert named params and <code>datetime('now')</code>, add migrations, use <code>SELECT ... FOR UPDATE</code> or a conditional insert for RSVPs, move rate-limit buckets to Redis with a trusted-proxy IP.</li><li><strong>Real-time.</strong> Server-Sent Events for new messages and badge counts, fed by Redis pub/sub across instances.</li><li><strong>Search.</strong> SQLite FTS5 or PostgreSQL full-text search instead of <code>LIKE '%q%'</code> over four columns.</li><li><strong>Moderation and audit.</strong> A <code>reports</code> table and admin queue; an <code>admin_actions</code> audit log; a guard that keeps at least one active admin per college.</li></ol>
+</section>
+
+<section class="chapter" id="drill">
+  <div class="eyebrow"></div>
+  <h2>Q&amp;A drill</h2>
+  <p>Every question from <code>INTERVIEW_PREP.md</code>. Answer aloud before opening. Turn on Self-test in the top bar to blur answers until you click them.</p>
+  <div class="qa-controls">
+    <input type="search" id="qsearch" placeholder="Search questions and answers" aria-label="Search questions and answers">
+    <button class="btn" id="expand">Expand all</button>
+    <button class="btn" id="collapse">Collapse all</button>
+    <span class="count" id="qcount" aria-live="polite"></span>
+  </div>
+  <div class="filters" role="group" aria-label="Filter by category"><button class="btn" type="button" data-cat="all" aria-pressed="true">All</button><button class="btn" type="button" data-cat="project-framing" aria-pressed="false">Project framing</button><button class="btn" type="button" data-cat="web-and-backend-fundamentals" aria-pressed="false">Web and backend fundamentals</button><button class="btn" type="button" data-cat="data-and-sql" aria-pressed="false">Data and SQL</button><button class="btn" type="button" data-cat="evaluation-and-testing" aria-pressed="false">Evaluation and testing</button><button class="btn" type="button" data-cat="systems-and-architecture" aria-pressed="false">Systems and architecture</button><button class="btn" type="button" data-cat="auth-and-security" aria-pressed="false">Auth and security</button><button class="btn" type="button" data-cat="frontend" aria-pressed="false">Frontend</button><button class="btn" type="button" data-cat="behavioral-hooks" aria-pressed="false">Behavioral hooks</button></div>
+  <div id="qalist"><details class="qa" data-cat="project-framing"><summary>What is AlumniConnect in one sentence?<span class="cat">Project framing</span></summary><div class="body ans"><p>A multi-college alumni network where each college's students, alumni and faculty get a private directory, messaging, jobs, events and mentorship, and a platform admin onboards colleges on shared infrastructure.</p></div></details><details class="qa" data-cat="project-framing"><summary>What did you personally build versus inherit?<span class="cat">Project framing</span></summary><div class="body ans"><p>The project started as a codebase that did not work: fake <code>setTimeout</code> saves, two database layers and leftover Express/MongoDB code. Commit <code>dece944</code> rebuilt the data layer, auth, all APIs and the UI; <code>f5f0e52</code> added the platform admin. I used AI assistance, and I reviewed and tested what went in; I can walk through any file.</p></div></details><details class="qa" data-cat="project-framing"><summary>What was the hardest part?<span class="cat">Project framing</span></summary><div class="body ans"><p>Deciding what to cut. The original had forums, maps, analytics and achievements that were mostly mock pages. I reduced it to a coherent core where every feature works end to end, then added the platform-admin layer, which forced a data-model change.</p></div></details><details class="qa" data-cat="project-framing"><summary>Why should an interviewer care about this project?<span class="cat">Project framing</span></summary><div class="body ans"><p>It shows access control done carefully: revocation without a token blacklist, tenant isolation, race-free capacity checks and consistent error semantics, all in a small codebase I can explain line by line.</p></div></details><details class="qa" data-cat="project-framing"><summary>What would you do differently if you started again?<span class="cat">Project framing</span></summary><div class="body ans"><p>Write the test script on day one and run it in CI, keep authentication-only logic in middleware and all authorization in handlers, and start on PostgreSQL with migrations if real users were expected.</p></div></details><details class="qa" data-cat="project-framing"><summary>Who are the users and what can each role do?<span class="cat">Project framing</span></summary><div class="body ans"><p>Students and alumni self-register; faculty and admins are created by an admin. Alumni, faculty and admins can post jobs and create events; alumni and faculty can mentor. College admins manage members of their own college; the platform admin manages colleges and appoints admins.</p></div></details><details class="qa" data-cat="web-and-backend-fundamentals"><summary>Why Next.js instead of a separate Express backend?<span class="cat">Web and backend fundamentals</span></summary><div class="body ans"><p>One codebase and one deploy, shared helpers between pages and API, and server components that can read the database directly for fast first render. The cost is coupling: the UI and API scale and deploy together.</p></div></details><details class="qa" data-cat="web-and-backend-fundamentals"><summary>What is the difference between a server component and a client component here?<span class="cat">Web and backend fundamentals</span></summary><div class="body ans"><p><code>app/dashboard/page.js</code> is a server component: it runs SQL with <code>all()</code>/<code>get()</code> and sends HTML. <code>app/dashboard/directory/page.js</code> has <code>&quot;use client&quot;</code> and calls <code>/api/profiles</code> from the browser because it needs live filtering.</p></div></details><details class="qa" data-cat="web-and-backend-fundamentals"><summary>Why does the middleware not query the database?<span class="cat">Web and backend fundamentals</span></summary><div class="body ans"><p>Next.js middleware runs on the Edge runtime, which cannot load the native <code>better-sqlite3</code> module or open a file. So middleware only verifies the token, and database checks happen in Node route handlers.</p></div></details><details class="qa" data-cat="web-and-backend-fundamentals"><summary>How are errors returned?<span class="cat">Web and backend fundamentals</span></summary><div class="body ans"><p>Every handler is wrapped in <code>handler()</code> from <code>lib/http.js</code>. A thrown <code>HttpError</code> becomes <code>{ error, details }</code> with its status; unknown errors are logged with method and path and returned as a generic 500.</p></div></details><details class="qa" data-cat="web-and-backend-fundamentals"><summary>Which status codes do you use and when?<span class="cat">Web and backend fundamentals</span></summary><div class="body ans"><p>400 for a malformed body or bad filter, 401 not signed in, 403 signed in but not allowed, 404 not found or in another college, 409 conflicts such as duplicate requests, a full event or an illegal state change, 422 validation failures with field details, 429 rate limited.</p></div></details><details class="qa" data-cat="web-and-backend-fundamentals"><summary>Why 422 and not 400 for validation errors?<span class="cat">Web and backend fundamentals</span></summary><div class="body ans"><p>400 here means the request could not be parsed as a JSON object; 422 means it was well-formed but the values broke a rule. The UI uses the 422 <code>details</code> map to show errors next to fields.</p></div></details><details class="qa" data-cat="web-and-backend-fundamentals"><summary>How does pagination work?<span class="cat">Web and backend fundamentals</span></summary><div class="body ans"><p><code>getPagination()</code> reads <code>page</code> and <code>limit</code> (default 20, capped at 50; routes override, for example 12 for the directory). The route reuses one <code>where</code> clause for <code>COUNT(*)</code> and the <code>LIMIT/OFFSET</code> query and returns <code>{ page, limit, total, totalPages }</code>.</p></div></details><details class="qa" data-cat="web-and-backend-fundamentals"><summary>How does the client handle an expired session?<span class="cat">Web and backend fundamentals</span></summary><div class="body ans"><p><code>api()</code> in <code>lib/client.js</code> sees a 401 from any non-auth endpoint and sets <code>window.location</code> to <code>/login?next=&lt;current path&gt;</code>. After login, <code>safeNext()</code> sends the user back only if the path is same-site.</p></div></details><details class="qa" data-cat="data-and-sql"><summary>Why SQLite? Isn't it a toy?<span class="cat">Data and SQL</span></summary><div class="body ans"><p>It is an ACID database with transactions, foreign keys and CHECK constraints, and it let the app run with <code>npm install &amp;&amp; npm run dev</code>. The limit is a single host and a single writer at a time, which is the main reason it would move to PostgreSQL for real traffic.</p></div></details><details class="qa" data-cat="data-and-sql"><summary>Walk me through the schema.<span class="cat">Data and SQL</span></summary><div class="body ans"><p>Ten tables: colleges as tenants; users and a 1:1 profile; connections, messages, jobs, events with RSVPs, mentorship requests and notifications. Jobs and events carry <code>college_id</code>; social tables reference users. Cascading foreign keys and ten indexes on the common lookups.</p></div></details><details class="qa" data-cat="data-and-sql"><summary>How do you stop duplicate connections in both directions?<span class="cat">Data and SQL</span></summary><div class="body ans"><p>The schema has <code>UNIQUE (requester_id, addressee_id)</code>, which only covers one direction. The POST handler uses <code>findConnection()</code> to look both ways inside a transaction, and if the other person already asked, it accepts that request instead of inserting.</p></div></details><details class="qa" data-cat="data-and-sql"><summary>What does WAL mode give you?<span class="cat">Data and SQL</span></summary><div class="body ans"><p>Readers do not block the writer and the writer does not block readers, which matters because the app polls constantly while users write messages. Writes are still serialised.</p></div></details><details class="qa" data-cat="data-and-sql"><summary>Why is <code>foreign_keys = ON</code> set explicitly?<span class="cat">Data and SQL</span></summary><div class="body ans"><p>SQLite ships with foreign key enforcement off for backward compatibility; without the pragma, <code>ON DELETE CASCADE</code> would silently do nothing.</p></div></details><details class="qa" data-cat="data-and-sql"><summary>How do you prevent SQL injection when building the profile UPDATE dynamically?<span class="cat">Data and SQL</span></summary><div class="body ans"><p>The column names come from <code>Object.keys(data)</code>, and <code>data</code> is the output of <code>validate()</code>, which only returns keys declared in <code>PROFILE_RULES</code>. Values are bound as named parameters.</p></div></details><details class="qa" data-cat="data-and-sql"><summary>How does search work and how would it scale?<span class="cat">Data and SQL</span></summary><div class="body ans"><p><code>LIKE '%term%'</code> over name, company, headline and skills, with wildcards escaped. A leading wildcard cannot use an index, so it is a full scan of the college's users; I would move to SQLite FTS5 or PostgreSQL full-text search.</p></div></details><details class="qa" data-cat="data-and-sql"><summary>How are schema changes handled?<span class="cat">Data and SQL</span></summary><div class="body ans"><p>They aren't migrated: <code>schema.sql</code> is applied idempotently on boot and <code>npm run db:reset</code> recreates the database. <code>database/init.js</code> detects the one known incompatible old schema and refuses to start with a clear message.</p></div></details><details class="qa" data-cat="evaluation-and-testing"><summary>How do you know it works?<span class="cat">Evaluation and testing</span></summary><div class="body ans"><p>I ran a 52-check end-to-end script against a production build on a fresh database and all pass; two of those checks first failed and exposed real bugs, which I fixed. It covers authentication, cross-college isolation, roles, validation, capacity, the state machine and revocation. Lint passes and the production build succeeds.</p></div></details><details class="qa" data-cat="evaluation-and-testing"><summary>Is there a test suite in the repo?<span class="cat">Evaluation and testing</span></summary><div class="body ans"><p>No. There is no <code>test</code> script and no CI; the smoke script lives in <code>docs/</code> and is not wired into <code>npm test</code>. Adding Vitest units and running the smoke script in CI is the first thing I would do.</p></div></details><details class="qa" data-cat="evaluation-and-testing"><summary>How did you test the race condition on event capacity?<span class="cat">Evaluation and testing</span></summary><div class="body ans"><p>I created an event with capacity 1 and fired five RSVPs from five signed-in users with <code>Promise.all</code>. Exactly one got 201 and four got 409 &quot;This event is full&quot;.</p></div></details><details class="qa" data-cat="evaluation-and-testing"><summary>What do your tests not cover?<span class="cat">Evaluation and testing</span></summary><div class="body ans"><p>The UI, multi-instance deployment, load, PostgreSQL behaviour, and the registration race on a duplicate email. They also mutate data, so they must run on a freshly seeded database.</p></div></details><details class="qa" data-cat="evaluation-and-testing"><summary>What would you measure in production?<span class="cat">Evaluation and testing</span></summary><div class="body ans"><p>p95 latency of directory search and thread polling, request volume from polling per active user (about 22 per minute with a chat open), SQLite lock waits, failed-login and 429 rates, and weekly active users per college.</p></div></details><details class="qa" data-cat="systems-and-architecture"><summary>How would you scale this to many colleges and thousands of users?<span class="cat">Systems and architecture</span></summary><div class="body ans"><p>Move to PostgreSQL with a connection pool, put rate limits and pub/sub in Redis, run several stateless Next.js instances behind a load balancer, replace polling with Server-Sent Events, and add full-text search. The code already isolates SQL in route files and <code>lib/db.js</code>, so the change is mostly mechanical.</p></div></details><details class="qa" data-cat="systems-and-architecture"><summary>What breaks first under load?<span class="cat">Systems and architecture</span></summary><div class="body ans"><p>Polling volume and SQLite writes on one host. Every open chat polls every 4 s and every tab polls badges every 20 s, and all writes funnel through one file lock.</p></div></details><details class="qa" data-cat="systems-and-architecture"><summary>What happens if you run two instances against one SQLite file?<span class="cat">Systems and architecture</span></summary><div class="body ans"><p>Rate limits would be per instance, the <code>globalThis</code> handle is per process, and writers would contend for the file lock; network file systems make SQLite locking unreliable. It is a single-instance design.</p></div></details><details class="qa" data-cat="systems-and-architecture"><summary>Why polling and not WebSockets?<span class="cat">Systems and architecture</span></summary><div class="body ans"><p>It works on any host, including the Render free tier, and is easy to reason about. The cursor <code>?after=&lt;id&gt;</code> makes each poll cheap. The cost is latency and wasted requests; SSE would be my next step.</p></div></details><details class="qa" data-cat="systems-and-architecture"><summary>How does the event capacity check stay correct under concurrency?<span class="cat">Systems and architecture</span></summary><div class="body ans"><p>Count and insert run in one <code>better-sqlite3</code> transaction. The driver is synchronous, so nothing else runs on the event loop mid-transaction, and SQLite's write lock serialises writers. On PostgreSQL I'd lock the event row with <code>SELECT ... FOR UPDATE</code> or use a conditional insert.</p></div></details><details class="qa" data-cat="systems-and-architecture"><summary>Why server components for the dashboard and admin pages?<span class="cat">Systems and architecture</span></summary><div class="body ans"><p>They are read-heavy and need no interactivity on first paint, so querying the database directly avoids a client round trip and a loading state. The trade-off is that the same data is read in two places (pages and API routes) and can drift.</p></div></details><details class="qa" data-cat="systems-and-architecture"><summary>How is the mentorship workflow modelled?<span class="cat">Systems and architecture</span></summary><div class="body ans"><p>As a transition table: accept and decline by the mentor from pending, complete by either party from accepted, cancel by the mentee from pending (deletes the row). Wrong actor gives 403 and wrong state gives 409, and accepting connects the pair so they can message.</p></div></details><details class="qa" data-cat="systems-and-architecture"><summary>What is a single point of failure here?<span class="cat">Systems and architecture</span></summary><div class="body ans"><p>Everything: one process, one disk. On the free Render plan the disk is also ephemeral, so a restart resets data to the demo seed.</p></div></details><details class="qa" data-cat="auth-and-security"><summary>JWTs can't be revoked. How do you ban a user?<span class="cat">Auth and security</span></summary><div class="body ans"><p>The JWT only proves identity. <code>requireUser()</code> re-reads the user and their college on every request and rejects inactive ones, so a deactivated user gets 401 on their next API call. I verified that with an existing token.</p></div></details><details class="qa" data-cat="auth-and-security"><summary>Then is revocation fully solved?<span class="cat">Auth and security</span></summary><div class="body ans"><p>No. Logout only clears the cookie and a password change doesn't invalidate other sessions; a stolen token works for up to 7 days unless the account is deactivated. A <code>token_version</code> column checked in <code>getCurrentUser()</code> would fix it.</p></div></details><details class="qa" data-cat="auth-and-security"><summary>Why store the token in an httpOnly cookie instead of localStorage?<span class="cat">Auth and security</span></summary><div class="body ans"><p>JavaScript cannot read an httpOnly cookie, so an XSS bug cannot exfiltrate the token. <code>SameSite=Lax</code> stops other sites from sending it on cross-site POSTs, which covers the main CSRF case.</p></div></details><details class="qa" data-cat="auth-and-security"><summary>How do you prevent CSRF?<span class="cat">Auth and security</span></summary><div class="body ans"><p>Only through <code>SameSite=Lax</code> and JSON APIs. There is no CSRF token or Origin check, so a compromised sibling subdomain could still make same-site requests. Adding an Origin check in middleware would be cheap.</p></div></details><details class="qa" data-cat="auth-and-security"><summary>How do you stop one college seeing another's data?<span class="cat">Auth and security</span></summary><div class="body ans"><p>Every college-scoped query filters by the caller's <code>college_id</code>, and <code>getColleague()</code> is the single entry point for acting on another user. Cross-college lookups return 404, so the response doesn't confirm the resource exists. I verified profile, connect and thread lookups across colleges.</p></div></details><details class="qa" data-cat="auth-and-security"><summary>What is weak about your rate limiter?<span class="cat">Auth and security</span></summary><div class="body ans"><p>It is in memory and per process, it counts successes as well as failures, and its IP comes from <code>X-Forwarded-For</code>, which a client can set. I verified that changing the header resets the login limit. I would trust only the proxy's appended value and add a per-account counter.</p></div></details><details class="qa" data-cat="auth-and-security"><summary>How do you prevent user enumeration at login?<span class="cat">Auth and security</span></summary><div class="body ans"><p>Same error message for unknown email and wrong password, and <code>bcrypt.compare</code> runs against a dummy hash when the email doesn't exist, so timing matches. Registration still returns 409 for a taken email, which is a remaining enumeration path.</p></div></details><details class="qa" data-cat="auth-and-security"><summary>Why bcrypt with cost 10, and why the 72-character limit?<span class="cat">Auth and security</span></summary><div class="body ans"><p>bcrypt is deliberately slow and salted. Cost 10 is a reasonable default for a demo; I'd raise it or move to argon2id in production. bcrypt ignores input past 72 bytes, so longer passwords are rejected rather than silently truncated.</p></div></details><details class="qa" data-cat="auth-and-security"><summary>What stops a <code>javascript:</code> link in a profile?<span class="cat">Auth and security</span></summary><div class="body ans"><p>The <code>url</code> validator only accepts <code>http:</code> and <code>https:</code>, and React escapes all rendered text. I verified a <code>javascript:</code> LinkedIn URL is rejected with 422.</p></div></details><details class="qa" data-cat="auth-and-security"><summary>What happens if <code>JWT_SECRET</code> is missing in production?<span class="cat">Auth and security</span></summary><div class="body ans"><p><code>getSecret()</code> throws, so signing fails and <code>verifySession()</code> treats every token as invalid; nobody can log in. That is fail-closed, but the error is hidden by the catch in <code>verifySession()</code>, which makes it confusing to debug.</p></div></details><details class="qa" data-cat="auth-and-security"><summary>Is there anything insecure about the public demo?<span class="cat">Auth and security</span></summary><div class="body ans"><p>Yes. The seed creates a platform admin with a published password and the login page has one-click demo buttons, so on any public deployment that seeds demo data anyone can sign in as platform admin. Fine for a portfolio demo, not for real data; <code>SEED_DEMO_DATA=false</code> turns it off.</p></div></details><details class="qa" data-cat="auth-and-security"><summary>What did your probes find in authorization?<span class="cat">Auth and security</span></summary><div class="body ans"><p>Middleware used to gate admin routes on the role inside the JWT. Demotion was safe because <code>requireRole()</code> re-checks the database, but a promoted admin was blocked until they logged in again. I removed that gate so middleware only authenticates, and the database decides authorization.</p></div></details><details class="qa" data-cat="frontend"><summary>How does the UI handle loading, empty and error states?<span class="cat">Frontend</span></summary><div class="body ans"><p><code>useApi()</code> returns <code>{ data, error, loading, reload }</code>, and pages render <code>SkeletonList</code>, <code>EmptyState</code> or <code>ErrorState</code> with a retry button from <code>components/ui.js</code>.</p></div></details><details class="qa" data-cat="frontend"><summary>How do forms show server-side validation errors?<span class="cat">Frontend</span></summary><div class="body ans"><p><code>api()</code> throws <code>ApiError</code> with <code>details</code>; forms keep them in state and pass <code>errors.&lt;field&gt;</code> to <code>Field</code>, which renders the message under the input.</p></div></details><details class="qa" data-cat="frontend"><summary>How do you avoid a request per keystroke in search?<span class="cat">Frontend</span></summary><div class="body ans"><p><code>useDebounce(q, 300)</code> delays the query until typing pauses, and the effect uses a <code>cancelled</code> flag so a slow earlier response cannot overwrite a newer one.</p></div></details><details class="qa" data-cat="frontend"><summary>How does chat avoid showing a message twice?<span class="cat">Frontend</span></summary><div class="body ans"><p>Sent messages are appended immediately and polling may return them again, so <code>appendMessages()</code> filters out ids already in a <code>Set</code>, and the poll cursor advances to the last id.</p></div></details><details class="qa" data-cat="frontend"><summary>What accessibility work is there?<span class="cat">Frontend</span></summary><div class="body ans"><p>Labelled inputs via <code>Field</code>, <code>aria-current</code> on nav links, <code>role=&quot;dialog&quot;</code> and Escape-to-close on modals, an <code>aria-live</code> toast region, <code>aria-busy</code> skeletons and screen-reader text on badge counts.</p></div></details><details class="qa" data-cat="behavioral-hooks"><summary>Tell me about a time you found a bug in your own work.<span class="cat">Behavioral hooks</span></summary><div class="body ans"><p>While preparing these docs I suspected the nav badge and the connections page disagreed, so I wrote a check that deactivates a user who had a pending request. The badge said 1 and the list said 0. The cause was a missing <code>is_active</code> join in <code>/api/summary</code>; I added the join and the check now passes.</p></div></details><details class="qa" data-cat="behavioral-hooks"><summary>Tell me about a trade-off you made deliberately.<span class="cat">Behavioral hooks</span></summary><div class="body ans"><p>Polling over WebSockets: it works on free hosting and is simple to reason about, at the cost of latency and request volume. I'd revisit it once there is a Redis-backed multi-instance setup.</p></div></details><details class="qa" data-cat="behavioral-hooks"><summary>How do you decide what to cut?<span class="cat">Behavioral hooks</span></summary><div class="body ans"><p>I kept features that could work end to end with real data and removed pages that were only mock UI. A smaller system that is correct is easier to extend than a large one full of stubs.</p></div></details><details class="qa" data-cat="behavioral-hooks"><summary>How did you use AI tools on this project?<span class="cat">Behavioral hooks</span></summary><div class="body ans"><p>As an accelerator for the rebuild, with me reviewing, running and testing the result. I'd rather say that plainly and show I can explain and change any file.</p></div></details><details class="qa" data-cat="behavioral-hooks"><summary>What are you most proud of?<span class="cat">Behavioral hooks</span></summary><div class="body ans"><p>That revocation and tenant isolation are structural: one helper for identity, one for cross-user access, and constraints in the schema, rather than checks sprinkled around that someone could forget.</p></div></details></div>
+</section>
+
+<section class="chapter" id="quiz">
+  <div class="eyebrow"></div>
+  <h2>Self-quiz</h2>
+  <p>From <code>CODEBASE_GUIDE.md</code> section 14, ordered from basic to tricky.</p>
+  <details class="quizq"><summary>What runs in middleware and what does not?</summary><div class="body ans"><p>Signature/expiry check of the JWT, the public-API allowlist, the superadmin gate for platform paths, superadmin confinement and security headers. College-admin authorization is not done there. Nothing that touches the database, because middleware runs on the Edge runtime.</p></div></details><details class="quizq"><summary>Where is the database opened, and how many connections exist?</summary><div class="body ans"><p><code>getDb()</code> in <code>lib/db.js</code> calls <code>openDatabase()</code> from <code>database/init.js</code> once per process and caches the handle on <code>globalThis</code>, so there is one connection per server process.</p></div></details><details class="quizq"><summary>What three pragmas are set and why?</summary><div class="body ans"><p><code>journal_mode = WAL</code> (readers do not block the writer), <code>foreign_keys = ON</code> (SQLite has them off by default) and <code>busy_timeout = 5000</code> (wait up to 5 s for a lock instead of failing).</p></div></details><details class="quizq"><summary>What is in the JWT?</summary><div class="body ans"><p><code>sub</code> = user id, <code>role</code>, <code>cid</code> = college id, <code>iat</code> and <code>exp</code> (7 days), signed HS256.</p></div></details><details class="quizq"><summary>Why is the user re-read from the database on every request?</summary><div class="body ans"><p>So deactivation, role changes and college deactivation take effect immediately even though the JWT is still valid.</p></div></details><details class="quizq"><summary>A user from College A requests <code>/api/profiles/&lt;id of a College B user&gt;</code>. What happens?</summary><div class="body ans"><p>404 &quot;Profile not found&quot;, because the query filters <code>u.college_id = @college</code>. 404 rather than 403 so it does not reveal the user exists.</p></div></details><details class="quizq"><summary>How is SQL injection prevented in search?</summary><div class="body ans"><p>All values are bound parameters, and <code>LIKE</code> input has <code>\</code>, <code>%</code> and <code>_</code> escaped with <code>ESCAPE '\'</code>, so <code>%</code> searches literally (verified: 0 results).</p></div></details><details class="quizq"><summary>How does <code>profiles/me</code> PUT build a dynamic UPDATE safely?</summary><div class="body ans"><p><code>validate()</code> returns only keys declared in <code>PROFILE_RULES</code>, so the column names interpolated into <code>SET</code> come from a whitelist; values are named parameters.</p></div></details><details class="quizq"><summary>What does <code>validate()</code> do with an empty optional string?</summary><div class="body ans"><p>Stores <code>null</code> (or <code>false</code> for a bool) if the key was present; omits the key if it was absent. With <code>partial: true</code>, required checks are skipped.</p></div></details><details class="quizq"><summary>Why do login failures for unknown emails still call bcrypt?</summary><div class="body ans"><p>To make response time the same as for a wrong password, so timing does not reveal which emails exist.</p></div></details><details class="quizq"><summary>What are the three rate limits?</summary><div class="body ans"><p>Login 10 per 15 min per IP+email, register 5 per 10 min per IP, password change 5 per 15 min per user, all fixed-window in memory.</p></div></details><details class="quizq"><summary>How can the login rate limit be bypassed?</summary><div class="body ans"><p>By sending a different <code>X-Forwarded-For</code> value, since <code>clientIp()</code> trusts it; also by rotating the email part of the key.</p></div></details><details class="quizq"><summary>What makes the RSVP capacity check safe?</summary><div class="body ans"><p>The count and insert run in one <code>better-sqlite3</code> transaction, which is synchronous and holds the write lock, so no other request can interleave in the same process.</p></div></details><details class="quizq"><summary>What prevents a double RSVP independently of the code?</summary><div class="body ans"><p>The composite primary key <code>(event_id, user_id)</code> on <code>event_rsvps</code>.</p></div></details><details class="quizq"><summary>What happens when A sends a connection request to B, who already requested A?</summary><div class="body ans"><p>The POST finds B's pending row via <code>findConnection()</code> and accepts it instead of inserting a second row, and notifies B.</p></div></details><details class="quizq"><summary>Who can accept a connection via PATCH?</summary><div class="body ans"><p>Only the addressee of a pending request; otherwise 409.</p></div></details><details class="quizq"><summary>List the mentorship transitions.</summary><div class="body ans"><p>accept and decline: mentor, pending -&gt; accepted/declined. complete: either party, accepted -&gt; completed. cancel: mentee, pending -&gt; row deleted.</p></div></details><details class="quizq"><summary>Why does accepting a mentorship touch the connections table?</summary><div class="body ans"><p>Messaging requires an accepted connection, so acceptance creates one or accepts a pending one, letting the pair message.</p></div></details><details class="quizq"><summary>How does chat polling avoid duplicates?</summary><div class="body ans"><p>It polls with <code>?after=&lt;last message id&gt;</code>, and <code>appendMessages()</code> filters ids already in a <code>Set</code>.</p></div></details><details class="quizq"><summary>Why can a platform admin not open <code>/dashboard/directory</code>?</summary><div class="body ans"><p>Middleware redirects superadmins to <code>/dashboard/platform</code> for any page except <code>/dashboard/settings</code>, and returns 403 for college APIs; they have no college.</p></div></details><details class="quizq"><summary>Which database constraint encodes &quot;platform admins have no college&quot;?</summary><div class="body ans"><p><code>CHECK ((role = 'superadmin') = (college_id IS NULL))</code> on <code>users</code>.</p></div></details><details class="quizq"><summary>What happens to members when a college is deactivated?</summary><div class="body ans"><p><code>getCurrentUser()</code> requires <code>c.is_active = 1</code>, so their next request is 401; login returns 403; the college disappears from <code>/api/colleges</code>. No rows are deleted.</p></div></details><details class="quizq"><summary>Why is there no admin role check in middleware?</summary><div class="body ans"><p>The JWT keeps the role from login, so a gate there blocked newly promoted admins until they signed in again. Authorization for <code>/api/admin</code> is done by <code>requireRole(&quot;admin&quot;)</code> against the database, which handles both promotion and demotion immediately.</p></div></details><details class="quizq"><summary>Why does <code>/api/summary</code> join <code>users</code>?</summary><div class="body ans"><p>So the badge excludes pending requests and unread messages from deactivated users, matching the Connections page. Before the fix the badge could say 1 while the page showed 0.</p></div></details><details class="quizq"><summary>What happens if two people register the same email at the same instant?</summary><div class="body ans"><p>Both pass the <code>SELECT 1 ... WHERE email = ?</code> check; the second insert violates <code>UNIQUE</code>, which <code>handler()</code> turns into a 500 rather than a 409.</p></div></details><details class="quizq"><summary>Why does <code>database/init.js</code> throw on an old database instead of migrating?</summary><div class="body ans"><p>The old <code>users</code> table has a CHECK constraint that SQLite cannot alter in place, and the data is demo-only, so it asks for <code>npm run db:reset</code>.</p></div></details><details class="quizq"><summary>What would you change first to run two instances?</summary><div class="body ans"><p>Move to PostgreSQL (shared state, row locks for RSVPs), move rate-limit buckets to Redis, and push or pub/sub for chat.</p></div></details><details class="quizq"><summary>Why does <code>lib/client.js</code> not redirect on 401 from <code>/api/auth/*</code>?</summary><div class="body ans"><p>A 401 from login means wrong credentials, which the form must display, not a session expiry.</p></div></details>
+</section>
+
+<section class="chapter" id="deliver">
+  <div class="eyebrow"></div>
+  <h2>How to deliver it</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Segment</th><th>Time</th><th>Content</th></tr></thead>
+    <tbody>
+      <tr><td>Pitch</td><td>20-30 s</td><td>The callout at the top of this page</td></tr>
+      <tr><td>Architecture</td><td>1-2 min</td><td>One process; middleware for identity; handlers re-check DB; college_id everywhere; SQLite file; server vs client components</td></tr>
+      <tr><td>Deep dive</td><td>3-4 min</td><td>Pick one: two-layer auth, the RSVP transaction, or tenant isolation with 404. Name the file and function</td></tr>
+      <tr><td>Numbers</td><td>30 s</td><td>52 checks all passing, two of which first failed and found bugs I fixed; 1 of 5 concurrent RSVPs succeeded on capacity 1</td></tr>
+      <tr><td>Limitation</td><td>30 s</td><td>Single process + polling; no session revocation; spoofable rate-limit IP</td></tr>
+      <tr><td>Bug story</td><td>1 min</td><td>The college-less superadmin, or the badge probe that found and fixed a bug</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout good"><span class="label">Rules of thumb</span><ul>
+    <li>Stop when interrupted; answer the question asked.</li>
+    <li>Never claim a number you did not measure.</li>
+    <li>When you don't know, say what you would measure and how.</li>
+    <li>Name files and functions.</li>
+    <li>Volunteer one limitation first.</li>
+  </ul></div>
+</section>
+
+<section class="chapter" id="checklist">
+  <div class="eyebrow"></div>
+  <h2>Final checklist</h2>
+  <p><span class="count" id="ckcount"></span></p>
+  <div class="progress" aria-hidden="true"><span id="ckbar"></span></div>
+  <ul class="checklist" id="cklist">
+    <li><label><input type="checkbox" data-k="pitch"> I can say the 30-second pitch without notes.</label></li>
+    <li><label><input type="checkbox" data-k="mw"> I can explain <code>middleware.js</code> line by line.</label></li>
+    <li><label><input type="checkbox" data-k="session"> I can explain why <code>requireUser()</code> re-reads the DB and what that buys.</label></li>
+    <li><label><input type="checkbox" data-k="tenant"> I can explain tenant isolation and why it returns 404.</label></li>
+    <li><label><input type="checkbox" data-k="rsvp"> I can explain why the RSVP check cannot overbook, and what changes on Postgres.</label></li>
+    <li><label><input type="checkbox" data-k="mutual"> I can explain mutual connection requests and the UNIQUE gap.</label></li>
+    <li><label><input type="checkbox" data-k="mentor"> I can list the mentorship transitions and their status codes.</label></li>
+    <li><label><input type="checkbox" data-k="login"> I can explain the dummy-hash login and the rate limiter's weaknesses.</label></li>
+    <li><label><input type="checkbox" data-k="numbers"> I know the real numbers (52 checks all passing; 26 / 38; 10 tables).</label></li>
+    <li><label><input type="checkbox" data-k="weak"> I can list five weaknesses before being asked.</label></li>
+    <li><label><input type="checkbox" data-k="story"> I can tell one bug story in "situation, cause, fix, lesson" form.</label></li>
+    <li><label><input type="checkbox" data-k="run"> I ran the app and the smoke script myself.</label></li>
+    <li><label><input type="checkbox" data-k="change"> I made one small change to the code myself.</label></li>
+    <li><label><input type="checkbox" data-k="drill"> I went through the Q&amp;A drill in self-test mode.</label></li>
+  </ul>
+</section>
+
+<footer>Generated from the code at commit <code>2c27616</code>. Sources: <code>docs/ARCHITECTURE.md</code>, <code>docs/CODEBASE_GUIDE.md</code>, <code>docs/INTERVIEW_PREP.md</code>, <code>docs/smoke-check-output.txt</code>.</footer>
+</main>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){return null;}}
+  // theme
+  var saved=store("ac-guide-theme"); if(saved==="light"||saved==="dark")root.setAttribute("data-theme",saved);
+  document.getElementById("theme").addEventListener("click",function(){
+    var cur=root.getAttribute("data-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
+    var next=cur==="dark"?"light":"dark"; root.setAttribute("data-theme",next); store("ac-guide-theme",next);
+  });
+  // self-test
+  var st=document.getElementById("selftest");
+  st.addEventListener("click",function(){
+    var on=!document.body.classList.contains("selftest");
+    document.body.classList.toggle("selftest",on); st.setAttribute("aria-pressed",String(on));
+    document.querySelectorAll(".ans.revealed").forEach(function(a){a.classList.remove("revealed");});
+  });
+  document.addEventListener("click",function(e){
+    var a=e.target.closest&&e.target.closest(".ans");
+    if(a&&document.body.classList.contains("selftest"))a.classList.add("revealed");
+  });
+  // Q&A filter
+  var items=[].slice.call(document.querySelectorAll("#qalist .qa"));
+  var search=document.getElementById("qsearch"),count=document.getElementById("qcount"),cat="all";
+  function apply(){
+    var q=search.value.trim().toLowerCase(),n=0;
+    items.forEach(function(it){
+      var ok=(cat==="all"||it.dataset.cat===cat)&&(!q||it.textContent.toLowerCase().indexOf(q)!==-1);
+      it.hidden=!ok; if(ok)n++;
+    });
+    count.textContent=n+" of "+items.length+" questions";
+  }
+  search.addEventListener("input",apply);
+  document.querySelectorAll(".filters .btn").forEach(function(b){
+    b.addEventListener("click",function(){
+      cat=b.dataset.cat;
+      document.querySelectorAll(".filters .btn").forEach(function(x){x.setAttribute("aria-pressed",String(x===b));});
+      apply();
+    });
+  });
+  document.getElementById("expand").addEventListener("click",function(){items.forEach(function(i){if(!i.hidden)i.open=true;});});
+  document.getElementById("collapse").addEventListener("click",function(){items.forEach(function(i){i.open=false;});});
+  apply();
+  // copy buttons
+  document.querySelectorAll(".copy").forEach(function(b){
+    b.addEventListener("click",function(){
+      var t=b.parentNode.querySelector("code").textContent;
+      var done=function(){b.textContent="Copied";setTimeout(function(){b.textContent="Copy";},1200);};
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,function(){b.textContent="Select";});}
+      else{b.textContent="Select";}
+    });
+  });
+  // checklist
+  var boxes=[].slice.call(document.querySelectorAll("#cklist input"));
+  var state={}; try{state=JSON.parse(store("ac-guide-checklist")||"{}")||{};}catch(e){state={};}
+  function upd(){
+    var d=boxes.filter(function(b){return b.checked;}).length;
+    document.getElementById("ckcount").textContent=d+" of "+boxes.length+" done";
+    document.getElementById("ckbar").style.width=(100*d/boxes.length)+"%";
+  }
+  boxes.forEach(function(b){
+    b.checked=!!state[b.dataset.k];
+    b.addEventListener("change",function(){state[b.dataset.k]=b.checked;store("ac-guide-checklist",JSON.stringify(state));upd();});
+  });
+  upd();
+  // active chapter in rail
+  var links=[].slice.call(document.querySelectorAll(".rail a"));
+  var map={}; links.forEach(function(a){map[a.getAttribute("href").slice(1)]=a;});
+  if("IntersectionObserver" in window){
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(e.isIntersecting){
+          links.forEach(function(a){a.classList.remove("active");a.removeAttribute("aria-current");});
+          var a=map[e.target.id]; if(a){a.classList.add("active");a.setAttribute("aria-current","true");
+            if(a.scrollIntoView&&window.innerWidth<=900){var r=a.parentNode.parentNode.parentNode;r.scrollLeft=a.offsetLeft-16;}}
+        }
+      });
+    },{rootMargin:"-30% 0px -65% 0px"});
+    document.querySelectorAll("#top, section.chapter").forEach(function(s){io.observe(s);});
+  }
+  // print: open all folds
+  window.addEventListener("beforeprint",function(){document.querySelectorAll("details").forEach(function(d){d.dataset.wasOpen=d.open;d.open=true;});});
+  window.addEventListener("afterprint",function(){document.querySelectorAll("details").forEach(function(d){d.open=d.dataset.wasOpen==="true";});});
+})();
+</script>
+</body>
+</html>
